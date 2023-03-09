@@ -1,0 +1,5 @@
+# Source before invoking function CLI commands
+export HEROKU_HOST=https://api.staging.herokudev.com
+export HEROKU_LOGIN_HOST=https://auth-staging-cloud.herokai.com
+export SALESFORCE_FUNCTIONS_API=$HEROKU_HOST
+export SALESFORCE_FUNCTIONS_IDENTITY_URL=$HEROKU_LOGIN_HOST

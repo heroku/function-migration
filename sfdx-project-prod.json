@@ -1,0 +1,10 @@
+{
+    "packageDirectories": [
+        {
+            "path": "force-app",
+            "default": true
+        }
+    ],
+    "name": "sfhxhello",
+    "sfdcLoginUrl": "https://login.salesforce.com"
+}

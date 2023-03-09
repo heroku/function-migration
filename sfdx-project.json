@@ -1,0 +1,23 @@
+{
+    "packageDirectories": [
+        {
+            "path": "force-app",
+            "default": true,
+            "package": "Functions Oh Yeah Package",
+            "versionName": "ver 0.1",
+            "versionNumber": "0.1.0.NEXT",
+            "functions": [
+                 "functions/unitofworkfunction",
+                 "functions/anotherfunction"
+             ]
+
+        }
+    ],
+    "name": "sfhxhello",
+    "namespace": "functionz",
+    "sfdcLoginUrl": "https://cwall-wsl5.internal.salesforce.com:6101",
+    "apiVersion": "57.0",
+    "packageAliases": {
+        "Functions Oh Yeah Package": "0Hoxx0000004CiWCAU"
+    }
+}

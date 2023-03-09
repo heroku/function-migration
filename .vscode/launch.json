@@ -1,0 +1,38 @@
+{
+    "configurations": [        
+        {
+            "address": "localhost",
+            "localRoot": "/home/cwall/git/function-migration/functions/unitofworkfunction/proxy",
+            "name": "Attach to Remote",
+            "port": 9229,
+            "remoteRoot": "Absolute path to the remote directory containing the program",
+            "request": "attach",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node"
+        },
+        {
+            "type": "chrome",
+            "name": "http://127.0.0.1:3000",
+            "request": "launch",
+            "url": "http://127.0.0.1:3000"
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Start fastify",
+            "skipFiles": ["<node_internals>/**"],
+            "runtimeArgs": ["--inspect"],
+            "program": "${workspaceFolder}/functions/unitofworkfunction/proxy/node_modules/fastify-cli/cli.js",
+            "args": [
+              "start",
+              "-w",
+              "--ignore-watch='test .vscode'",
+              "-l",
+              "debug",
+              "${workspaceFolder}/functions/unitofworkfunction/proxy/app.js"
+            ]
+          }
+    ]
+}
