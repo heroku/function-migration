@@ -1,4 +1,4 @@
-CONTEXT=$(cat asyncContext.json | tr -s '\n' ' ')
+CONTEXT=$(cat asyncContext.json | tr -s '\n' ' ' | base64)
 CMD="curl -v \
   http://localhost:3000/async \
   -X POST \

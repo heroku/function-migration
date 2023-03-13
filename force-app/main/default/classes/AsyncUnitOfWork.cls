@@ -8,7 +8,7 @@ global class AsyncUnitOfWork {
     global static void invoke(FunctionCallback callback) { AsyncUnitOfWork.invoke(Function.get('sfhxhello.unitofworkfunction'), callback); }
 
     global static void invokeSync(Function unitofworkfunction) {
-        FunctionInvocation invocation = unitofworkfunction.invokeSync('{}');
+        FunctionInvocation invocation = unitofworkfunction.invoke('{}');
         System.debug('Did an sync enqueue with ID ' + invocation.getInvocationId());
         System.debug('Got response ' + invocation.getResponse());
         if (invocation.getStatus() == FunctionInvocationStatus.ERROR) {
@@ -18,7 +18,7 @@ global class AsyncUnitOfWork {
     }
     
     global static void invoke(Function unitofworkfunction, FunctionCallback callback) {
-        FunctionInvocation invocation = unitofworkfunction.invokeAsync('{}', callback);
+        FunctionInvocation invocation = unitofworkfunction.invoke('{}', callback);
         System.debug('Did an async enqueue with ID ' + invocation.getInvocationId());
     }
 

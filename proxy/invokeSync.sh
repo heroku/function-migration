@@ -1,4 +1,4 @@
-CONTEXT=$(cat syncContext.json | tr -s '\n' ' ')
+CONTEXT=$(cat syncContext.json | tr -s '\n' ' ' | base64)
 CMD="curl -v \
   http://localhost:3000/sync \
   -X POST \

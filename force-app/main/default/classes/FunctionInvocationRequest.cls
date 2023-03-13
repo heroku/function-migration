@@ -1,25 +1,29 @@
 /* Sample function HTTP request
-
-When we Base64-decode the ce-sfcontext header and format it for readability (adding spaces and newlines), we get:
 {
   'context': {
     'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze--MyFunction-2020-09-03T20:56:27.608444Z',
-    'apiVersion': '55.0',
+    'apiVersion': '58.0',
     'function': 'MyFunction',
     'resource': 'https://...',
     'source': 'urn:event:from:salesforce/<instance>/<orgId>/<sourceId, eg Apex Class Id>',
     'type': 'com.salesforce.function.invoke.sync'
     'namespace': '',
+    'asyncFunctionInvocationRequestId': '<id>',
+    'permissionSets': '[ 'MyPermissionSet' ]'
   },
   'userContext': {
     'orgId': '00Dxx0000006IYJ',
     'userId': '005xx000001X8Uz',
-    'username': 'test-zqisnf6ytlqv@example.com',
+    'onBehalfOfUserId': '',
+    'username': 'admin@example.com',
     'onBehalfOfUserId': '',
     'salesforceBaseUrl': 'http://pistachio-virgo-1063-dev-ed.localhost.internal.salesforce.com:6109',
     'orgDomainUrl': 'http://pistachio-virgo-1063-dev-ed.localhost.internal.salesforce.com:6109'
   }
 }
+
+Content is base64 encoded.
+
 */
 global class FunctionInvocationRequest {
 
@@ -33,8 +37,9 @@ global class FunctionInvocationRequest {
         public String resource { get { return resource; } set { resource = value; } }
         String source;
         String type;
+        // TODO: Move to UserContext
         String namespace;
-        String asyncFunctionInvocationRequestCallbackUrl;
+        String asyncFunctionInvocationRequestId;
         List<String> permissionSets;
 
         private Context() {}
@@ -47,8 +52,8 @@ global class FunctionInvocationRequest {
             this.source = builder.source;
             this.type = builder.type;
             this.namespace = builder.namespace;
-            this.asyncFunctionInvocationRequestCallbackUrl = asyncFunctionInvocationRequestCallbackUrl;
-            this.permissionSets = permissionSets;
+            this.asyncFunctionInvocationRequestId = builder.asyncFunctionInvocationRequestId;
+            this.permissionSets = builder.permissionSets;
         }
     }
 
@@ -61,7 +66,7 @@ global class FunctionInvocationRequest {
         private String source;
         private String type;
         private String namespace;
-        private String asyncFunctionInvocationRequestCallbackUrl;
+        private String asyncFunctionInvocationRequestId;
         private List<String> permissionSets;
 
         public ContextBuilder id(String id) {
@@ -99,8 +104,8 @@ global class FunctionInvocationRequest {
             return this;
         }
 
-        public ContextBuilder asyncFunctionInvocationRequestCallbackUrl(String asyncFunctionInvocationRequestCallbackUrl) {
-            this.asyncFunctionInvocationRequestCallbackUrl = asyncFunctionInvocationRequestCallbackUrl;
+        public ContextBuilder asyncFunctionInvocationRequestId(String asyncFunctionInvocationRequestId) {
+            this.asyncFunctionInvocationRequestId = asyncFunctionInvocationRequestId;
             return this;
         }
 
@@ -128,8 +133,8 @@ global class FunctionInvocationRequest {
             if (String.isBlank(type)) {
                 throw new IllegalStateException('Type is required');
             }
-            if (type.endsWith('.async') && String.isBlank(asyncFunctionInvocationRequestCallbackUrl)) {
-                throw new IllegalStateException('Callback URL is required');
+            if (type.endsWith('.async') && String.isBlank(asyncFunctionInvocationRequestId)) {
+                throw new IllegalStateException('AsyncFunctionInvocationRequest.Id is required');
             }
             return new Context(this);
         }
@@ -141,8 +146,8 @@ global class FunctionInvocationRequest {
         String userId;
         String username;
         String onBehalfOfUserId;
-        URL salesforceBaseUrl;
-        URL orgDomainUrl;
+        String salesforceBaseUrl;
+        String orgDomainUrl;
 
         private UserContext() {}
 
@@ -150,7 +155,7 @@ global class FunctionInvocationRequest {
             this.orgId = builder.orgId;
             this.userId = builder.userId;
             this.username = builder.username;
-            this.onBehalfOfUserId = '';
+            this.onBehalfOfUserId = builder.onBehalfOfUserId;
             this.salesforceBaseUrl = builder.salesforceBaseUrl;
             this.orgDomainUrl = builder.orgDomainUrl;
         }
@@ -161,16 +166,12 @@ global class FunctionInvocationRequest {
         private String orgId;
         private String userId;
         private String username;
-        private URL salesforceBaseUrl;
-        private URL orgDomainUrl;
+        private String onBehalfOfUserId;
+        private String salesforceBaseUrl;
+        private String orgDomainUrl;
 
         public UserContextBuilder orgId(String orgId) {
             this.orgId = orgId;
-            return this;
-        }
-
-        public UserContextBuilder userId(String userId) {
-            this.userId = userId;
             return this;
         }
 
@@ -179,12 +180,22 @@ global class FunctionInvocationRequest {
             return this;
         }
 
-        public UserContextBuilder salesforceBaseUrl(URL salesforceBaseUrl) {
+        public UserContextBuilder onBehalfOfUserId(String onBehalfOfUserId) {
+            this.onBehalfOfUserId = onBehalfOfUserId;
+            return this;
+        }
+
+        public UserContextBuilder userId(String userId) {
+            this.userId = userId;
+            return this;
+        }
+
+        public UserContextBuilder salesforceBaseUrl(String salesforceBaseUrl) {
             this.salesforceBaseUrl = salesforceBaseUrl;
             return this;
         }
 
-        public UserContextBuilder orgDomainUrl(URL orgDomainUrl) {
+        public UserContextBuilder orgDomainUrl(String orgDomainUrl) {
             this.orgDomainUrl = orgDomainUrl;
             return this;
         }
@@ -199,10 +210,10 @@ global class FunctionInvocationRequest {
             if (String.isBlank(username)) {
                 throw new IllegalStateException('Username is required');
             }
-            if (null == salesforceBaseUrl) {
+            if (String.isBlank(salesforceBaseUrl)) {
                 throw new IllegalStateException('SalesforceBaseUrl is required');
             }
-            if (null == orgDomainUrl) {
+            if (String.isBlank(orgDomainUrl)) {
                 throw new IllegalStateException('OrgDomainUrl is required');
             }
             return new UserContext(this);

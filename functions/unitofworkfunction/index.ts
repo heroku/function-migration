@@ -21,6 +21,8 @@ import { InvocationEvent, Context, Logger } from "sf-fx-sdk-nodejs";
         event.data || {}
       )}`
     );
+
+    // TODO: Invoke /services/oauth2/userinfo to verify user
   
     const query = "SELECT Id, Name FROM Account";
     //logger.info(query);

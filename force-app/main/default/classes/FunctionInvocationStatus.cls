@@ -1,3 +1,5 @@
 global enum FunctionInvocationStatus {
-    SUCCESS, ERROR, PENDING
+    SUCCESS, 
+    ERROR, 
+    PENDING
 }

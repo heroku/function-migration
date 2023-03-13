@@ -25,7 +25,7 @@ fastify.register(proxy, {
         const headers = request.headers;
         const { requestId, context, userContext } = await validateRequest(logger, headers);
         // FIxME: Log not available on originalReq
-        const accessToken = await mintToken(logger, headers);
+        const accessToken = await mintToken(logger, context, userContext);
         assembleFunctionRequest(headers, requestId, context, userContext, accessToken);
     }
 })
@@ -48,17 +48,24 @@ function parseHeaders(headers) {
 
     return { requestId, accessToken, context, userContext };
 }
+
 function parseContexts(headers) {
-    const contextHeader = headers['x-context'];
-    if (!contextHeader) {
+    const contextHeaderBase64 = headers['x-context'];
+    if (!contextHeaderBase64) {
         // TODO: Throwing results in 500, but we want a specific status code
         throw new Error('Context not found');
     }
 
-    // TODO: Remove surrounding double-quote
-    const contextTmp = JSON.parse(contextHeader.replaceAll('\'', '"'));
-    const context = contextTmp.context;
-    const userContext = contextTmp.userContext;
+    let contextHeaderStr;
+    try {
+        contextHeaderStr = Buffer.from(contextHeaderBase64, 'base64').toString('utf8');
+    } catch (err) {
+        throw new Error('Invalid Context format');
+    }
+
+    const contextHeader = JSON.parse(contextHeaderStr);
+    const context = contextHeader.context;
+    const userContext = contextHeader.userContext;
     return { context, userContext };
 }
 
@@ -84,19 +91,20 @@ async function validateRequest(logger, headers) {
     return { requestId, accessToken, context, userContext };
 }
 
-async function mintToken(logger, headers) {
-    const { context, userContext } = parseContexts(headers);
-
-    // Generate new accessToken; will throw if user does not have permissions for given Connected App
-    const jwtOpts = Object.assign(baseJwtOpts, {
-        audience: 'http://cwall-wsl5:6101', //userContext.salesforceBaseUrl,
+async function mintToken(logger, context, userContext) {
+    const jwtOpts =  {
         uri: `${userContext.salesforceBaseUrl}/services/oauth2/token`,
         user: userContext.username
-    });
+    };
+
+    if (process.env.SF_AUDIENCE) {
+        jwtOpts.audience = process.env.SF_AUDIENCE;
+    }
 
     let response;
     try {
-        response = await getToken(logger, jwtOpts);
+        // Generate new accessToken; will throw if user does not have permissions for given Connected App
+        response = await getToken(logger, Object.assign(baseJwtOpts, jwtOpts));
     } catch (err) {
         let errMsg = err.message;
         if (errMsg.includes('invalid_app_access')) {
@@ -161,15 +169,17 @@ async function handleAsyncRequest(request, reply) {
     sfConnection.initialize(sfOpts);
 
     try { // TODO: Ensure doesn't throw; if throws, catch and figure out what to do, eg retry
+        const status = statusCode < 200 || statusCode > 299 ? 'ERROR' : 'SUCCESS';
         const afirUpdateResponse = await sobjectUpdate(
             logger,
             sfConnection,
             'AsyncFunctionInvocationRequest__c',
             {
+                ExtraInfo__c: extraInfo,
                 Id: context.asyncFunctionInvocationRequestId,
                 Response__c: response,
+                Status__c: status,
                 StatusCode__c: statusCode,
-                ExtraInfo__c: extraInfo
             });
         // TODO: Iterate response array finding when !success
         if (afirUpdateResponse && !afirUpdateResponse.success) {
@@ -322,7 +332,7 @@ function assembleFunctionRequest(headers, requestId, context, userContext, acces
     headers.authorization = `Bearer ${accessToken}`;
     context.accessToken = accessToken;
     // REVIEWME: x-context is replaced as ce-sfcontext and ce-sffncontext, remove?
-    headers['x-context'] = JSON.stringify({ context, userContext });
+    headers['x-context'] = Buffer.from(JSON.stringify({ context, userContext }), 'utf8').toString('base64');
     headers['ce-specversion'] = 1.0;
     headers['ce-id'] = requestId;
     headers['ce-source'] = 'urn:event:from:salesforce/xx/228.0/00Dxx0000006IYJ/apex/MyFunctionApex:test():7';
@@ -333,14 +343,14 @@ function assembleFunctionRequest(headers, requestId, context, userContext, acces
         payloadVersion: '0.1',
         userContext
     }
-    headers['ce-sfcontext'] = Buffer.from(JSON.stringify(sfcontext), "utf8").toString("base64");;
+    headers['ce-sfcontext'] = Buffer.from(JSON.stringify(sfcontext), 'utf8').toString('base64');
     const sffncontext = {
         accessToken,
         requestId,
         functionInvocationId: context.asyncFunctionInvocationRequestId,
         function: context.function
     }
-    headers['ce-sffncontext'] = Buffer.from(JSON.stringify(sffncontext), "utf8").toString("base64");
+    headers['ce-sffncontext'] = Buffer.from(JSON.stringify(sffncontext), 'utf8').toString('base64');
 }
 
 fastify.post('/async', async function (request, reply) {
@@ -351,12 +361,12 @@ fastify.post('/async', async function (request, reply) {
         throw new Error('Invalid request type');
     }
     // Mint token w/ JWT and apply session-based PermSets to accessToken
-    const accessToken = await mintToken(logger, headers);
+    const accessToken = await mintToken(logger, context, userContext);
     assembleFunctionRequest(headers, requestId, context, userContext, accessToken);
     reply.code(201);
 });
 
 fastify.listen({ port: 3000 }, (err, address) => {
     if (err) throw err
-    // Server is now listening on ${address}
-})
+    console.log(`Function proxy listening on ${address}`);
+});
