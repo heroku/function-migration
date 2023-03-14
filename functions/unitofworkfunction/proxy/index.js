@@ -416,7 +416,7 @@ fastify.post('/async', async function (request, reply) {
     reply.code(201);
 });
 
-fastify.listen({ port: process.env.PORT || 3000 }, async (err, address) => {
+fastify.listen({ host: '0.0.0.0', port: process.env.PORT || 3000 }, async (err, address) => {
     if (err) throw err
 
     //const asyncSpawn = promisify(spawn);
