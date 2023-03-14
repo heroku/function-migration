@@ -1,4 +1,6 @@
 #!/bin/sh
+cd $BUILD_DIR
+ls -Ll
 cd proxy
+ls -Ll
 npm install
-cd -
