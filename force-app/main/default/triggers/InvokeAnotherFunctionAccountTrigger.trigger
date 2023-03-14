@@ -1,3 +1,3 @@
 trigger InvokeAnotherFunctionAccountTrigger on Account (before insert) {
-	InvokeAnotherFunction.invoke();
+	//InvokeAnotherFunction.invoke();
 }

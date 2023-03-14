@@ -13,7 +13,7 @@ public class InvokeAnotherFunction {
     // Invoke function
     public static void invokeAsyncFirstInsertAccount() {
         // INVOKE!
-        Function docjava = Function.get('sfhxhello.anotherfunction');
+        Function docjava = Function.get('sfhxhello_anotherfunction');
         FunctionInput params = new FunctionInput();
         docjava.invoke(JSON.serialize(params), new List<String>{ 'Functions' }, new ProcessApplicationCallback());
     }
@@ -22,7 +22,7 @@ public class InvokeAnotherFunction {
     public static void invoke() {
             
         // INVOKE!
-        Function docjava = Function.get('sfhxhello.anotherfunction');
+        Function docjava = Function.get('sfhxhello_anotherfunction');
         FunctionInput params = new FunctionInput();
         // Sync
         //FunctionInvocation invocation = docjava.invoke(JSON.serialize(params), new List<String>{ 'Functions' });
@@ -38,10 +38,12 @@ public class InvokeAnotherFunction {
     // Callback
     public class ProcessApplicationCallback implements FunctionCallback {    
         public void handleResponse(FunctionInvocation invocation) {
-            System.debug(invocation.getStatus().name() + ': ' + invocation.getResponse());
-            if (invocation.getStatus() == FunctionInvocationStatus.ERROR) {        
-                throw new CalloutException(invocation.getError() != null ? invocation.getError().getMessage() : 'UNKNOWN');
-            }
+            String logMe = invocation.getStatus().name() + ': ' + invocation.getResponse();
+            System.debug(logMe);
+            Account acct = new Account();
+            acct.Name = invocation.getInvocationId();
+            acct.Description = invocation.getInvocationId();
+            insert acct;
         }
     }
     
