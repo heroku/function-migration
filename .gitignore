@@ -60,3 +60,4 @@ profile*
 # salesforce
 .sfdx
 .sf
+sfdx-project.json

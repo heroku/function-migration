@@ -65,7 +65,7 @@ global class FunctionsDataSourceConnection extends DataSource.Connection {
         HttpRequest request = new HttpRequest();
         request.setEndPoint(url);
         request.setMethod('GET');
-        request.setHeader('Authorization', 'Bearer 45eaeff5-0683-4e97-9003-48ff8efdb091');
+        request.setHeader('Authorization', 'Bearer [API KEY HERE]');
         request.setHeader('Accept', 'application/vnd.heroku+json; version=3');
         HttpResponse response = h.send(request);
         return response.getBody();        
