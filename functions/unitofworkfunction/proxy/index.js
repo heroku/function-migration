@@ -100,6 +100,10 @@ async function mintToken(logger, context, userContext) {
         user: userContext.username
     };
 
+    if (jwtOpts.uri.includes('c.scratch.vf.force.com')) {
+        jwtOpts.isTest = true;
+    }
+
     if (process.env.SF_AUDIENCE) {
         jwtOpts.audience = process.env.SF_AUDIENCE;
     }
@@ -268,7 +272,7 @@ function getToken(logger, opts, cb) {
     }
 
     const uri = opts.uri || (isTest ? testUrl : prodUrl);
-    logger.info(`Getting token for user ${opts.user}, audience ${options.audience}, uri ${uri}, issuer ${options.issuer.substring(0,5)}`);
+    logger.info(`Getting ${isTest ? 'test ' : ' '}token for user ${opts.user}, audience ${options.audience}, uri ${uri}, issuer ${options.issuer.substring(0,5)}`);
 
     const token = jwt.sign({ prn: opts.user }, opts.privateKey, options);
 
