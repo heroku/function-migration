@@ -10,7 +10,7 @@ global class Function {
     final static String ASYNC_FUNCTION_URL = FUNCTION_URL + '/async';
     
     // TODO: Dynamic look up - based on SF version or calling API version?
-    final static String API_VERSION = '58.0';
+    final static String API_VERSION = '57.0';
     final static String SYNC_TYPE = 'com.salesforce.function.invoke.sync';
     final static String ASYNC_TYPE = 'com.salesforce.function.invoke.async';
 
@@ -24,6 +24,7 @@ global class Function {
         this.namespace = namespace;
         this.projectFunctionRef = projectFunctionRef;
         this.functionReference = functionReference;
+        System.debug('Endpoint for ' + projectFunctionRef + ' FunctionReference__mdt: ' + functionReference.Endpoint__c);
     }
 
     public String getFunctionName() {

@@ -4,6 +4,6 @@
     <protected>false</protected>
     <values>
         <field>Endpoint__c</field>
-        <value xsi:type="xsd:string">http://localhost:3000</value>
+        <value xsi:type="xsd:string">https://anotherfunction.herokuapp.com</value>
     </values>
 </CustomMetadata>

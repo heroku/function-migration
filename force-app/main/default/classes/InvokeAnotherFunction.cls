@@ -13,24 +13,24 @@ public class InvokeAnotherFunction {
     // Invoke function
     public static void invokeAsyncFirstInsertAccount() {
         // INVOKE!
-        Function docjava = Function.get('sfhxhello_anotherfunction');
+        Function docjava = Function.get('sfhxhello_unitofworkfunction');
         FunctionInput params = new FunctionInput();
-        docjava.invoke(JSON.serialize(params), new List<String>{ 'Functions' }, new ProcessApplicationCallback());
+        docjava.invoke(JSON.serialize(params), new List<String>{ 'UnitOfWorkFunction' }, new ProcessApplicationCallback());
     }
 
     // Invoke function
     public static void invoke() {
             
         // INVOKE!
-        Function docjava = Function.get('sfhxhello_anotherfunction');
+        Function docjava = Function.get('sfhxhello_unitofworkfunction');
         FunctionInput params = new FunctionInput();
         // Sync
-        //FunctionInvocation invocation = docjava.invoke(JSON.serialize(params), new List<String>{ 'Functions' });
+        //FunctionInvocation invocation = docjava.invoke(JSON.serialize(params), new List<String>{ 'UnitOfWorkFunction' });
         //System.debug(invocation.getStatus().name() + ': ' + invocation.getResponse());
 
         // Async
         FunctionInvocation invocation = docjava.invoke(JSON.serialize(params), 
-                                                       new List<String>{ 'Functions' }, 
+                                                       new List<String>{ 'UnitOfWorkFunction' }, 
                                                        new ProcessApplicationCallback());
         System.debug(invocation.getStatus().name() + ': ' + invocation.getResponse());
     }

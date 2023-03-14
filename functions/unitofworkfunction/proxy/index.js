@@ -253,7 +253,7 @@ async function requestPost(logger, conn, url, body, options) {
 // https://github.com/moshekarmel1/node-salesforce-jwt/pull/1
 import request from 'request';
 import jwt from 'jsonwebtoken';
-function getToken(opts, cb) {
+function getToken(logger, opts, cb) {
     const testUrl = 'https://test.salesforce.com/services/oauth2/token';
     const prodUrl = 'https://login.salesforce.com/services/oauth2/token';
     const testAudience = 'https://test.salesforce.com';
@@ -267,10 +267,13 @@ function getToken(opts, cb) {
         algorithm: opts.algorithm || 'RS256'
     }
 
+    const uri = opts.uri || (isTest ? testUrl : prodUrl);
+    logger.info(`Getting token for user ${opts.user}, audience ${options.audience}, uri ${uri}, issuer ${options.issuer.substring(0,5)}`);
+
     const token = jwt.sign({ prn: opts.user }, opts.privateKey, options);
 
     const post = {
-        uri: opts.uri || (isTest ? testUrl : prodUrl),
+        uri,
         form: {
             'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
             'assertion':  token
@@ -310,7 +313,7 @@ function JsonTryParse(string) {
 }
 async function asyncGetToken(logger, jwtOpts) {
     return new Promise((resolve, reject) => {
-        getToken(jwtOpts, (err, response) => {
+        getToken(logger, jwtOpts, (err, response) => {
             if (err) {
                 logger.error(err);
                 return reject(err);
