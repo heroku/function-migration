@@ -1,36 +1,36 @@
-public class InvokeAnotherFunction {
+public class InvokeUnitOfWorkFunction {
     
-    public InvokeAnotherFunction(ApexPages.StandardSetController controller) {   }
+    public InvokeUnitOfWorkFunction(ApexPages.StandardSetController controller) {   }
     
-    public InvokeAnotherFunction(ApexPages.StandardController controller) {   }
+    public InvokeUnitOfWorkFunction(ApexPages.StandardController controller) {   }
     
-    public InvokeAnotherFunction() {    }
+    public InvokeUnitOfWorkFunction() {    }
     
     public void invokeFromButton() {
-        InvokeAnotherFunction.invoke();
+        InvokeUnitOfWorkFunction.invoke();
     }
     
     // Invoke function
     public static void invokeAsyncFirstInsertAccount() {
         // INVOKE!
-        Function docjava = Function.get('sfhxhello_Anotherfunction');
+        Function docjava = Function.get('sfhxhello_unitofworkfunction');
         FunctionInput params = new FunctionInput();
-        docjava.invoke(JSON.serialize(params), new List<String>{ 'AnotherFunction' }, new ProcessApplicationCallback());
+        docjava.invoke(JSON.serialize(params), new List<String>{ 'UnitOfWorkFunction' }, new ProcessApplicationCallback());
     }
 
     // Invoke function
     public static void invoke() {
             
         // INVOKE!
-        Function docjava = Function.get('sfhxhello_Anotherfunction');
+        Function docjava = Function.get('sfhxhello_unitofworkfunction');
         FunctionInput params = new FunctionInput();
 
         // Sync
-        //FunctionInvocation invocation = docjava.invoke(JSON.serialize(params), new List<String>{ 'AnotherFunction' });
+        //FunctionInvocation invocation = docjava.invoke(JSON.serialize(params), new List<String>{ 'UnitOfWorkFunction' });
 
         // Async
         FunctionInvocation invocation = docjava.invoke(JSON.serialize(params), 
-                                                       new List<String>{ 'AnotherFunction' }, 
+                                                       new List<String>{ 'UnitOfWorkFunction' }, 
                                                        new ProcessApplicationCallback());
 
         System.debug(invocation.getStatus().name() + ': ' + invocation.getResponse());

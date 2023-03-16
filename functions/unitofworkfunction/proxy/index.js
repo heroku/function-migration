@@ -114,8 +114,8 @@ async function mintToken(logger, context, userContext) {
         response = await asyncGetToken(logger, Object.assign(baseJwtOpts, jwtOpts));
     } catch (err) {
         let errMsg = err.message;
-        if (errMsg.includes('invalid_app_access')) {
-            errMsg += `. Ensure that user ${userContext.username} is assigned to target Connected App`;
+        if (errMsg.includes('invalid_app_access') || errMsg.includes('user hasn\'t approved this consumer')) {
+            errMsg += `. Ensure that Connected App is set to "Admin approved users are pre-authorized" and user ${userContext.username} is assigned to target Connected App`;
         }
         logger.error(errMsg);
         throw new Error(errMsg);
