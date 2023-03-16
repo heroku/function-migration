@@ -46,7 +46,7 @@ public class InvokeUnitOfWorkFunction {
             System.debug(logMe);
             Account acct = new Account();
             acct.Name = FUNCTION + '/' + invocation.getInvocationId();
-            acct.Description = invocation.getInvocationId();
+            acct.Description = logMe;
             insert acct;
         }
     }
