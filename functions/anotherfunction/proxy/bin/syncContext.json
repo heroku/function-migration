@@ -1,0 +1,19 @@
+{
+  "context": {
+    "id": "00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-a00xx000000bxi1AAA-MyProject.MyFunction-2020-09-03T20:56:27.608444Z",
+    "apiVersion": "58.0",
+    "function": "MyProject.MyFunction",
+    "resource": "https://cwall-wsl5:3000",
+    "source": "urn:event:from:salesforce/xx/<orgId>/<sourceId, eg Apex Class Id>",
+    "type": "com.salesforce.function.invoke.sync",
+    "namespace": "",
+    "permissionSets": [ "Functions" ]
+  },
+  "userContext": {
+    "orgId": "00Dxx0000006JX6EAM",
+    "userId": "005xx000001XADRAA4",
+    "username": "admin@sf-fx-dh.com",
+    "salesforceBaseUrl": "https://sf-fx-dh.my.localhost.sfdcdev.salesforce.com:6101",
+    "orgDomainUrl": "https://sf-fx-dh.my.localhost.sfdcdev.salesforce.com:6101"
+  }
+}
