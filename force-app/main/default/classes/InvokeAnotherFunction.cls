@@ -37,12 +37,16 @@ public class InvokeAnotherFunction {
     }
     
     // Callback
-    public class ProcessApplicationCallback implements FunctionCallback {    
+    public class ProcessApplicationCallback implements FunctionCallback {
+    
+        final String FUNCTION = 'AnotherFunction';
+    
+    
         public void handleResponse(FunctionInvocation invocation) {
             String logMe = invocation.getStatus().name() + ': ' + invocation.getResponse();
             System.debug(logMe);
             Account acct = new Account();
-            acct.Name = invocation.getInvocationId() + Datetime.now().getTime();
+            acct.Name = FUNCTION + '/' + invocation.getInvocationId();
             acct.Description = invocation.getInvocationId();
             insert acct;
         }
