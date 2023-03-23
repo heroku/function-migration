@@ -17,7 +17,8 @@ trigger AsyncResponseHandlerTrigger on AsyncFunctionInvocationRequest__c (after 
                                                                        afir.Status__c,
                                                                        afir.Status__c.equalsIgnoreCase(FunctionInvocationStatus.ERROR.name()) ? afir.Response__c : '',
                                                                        afir.StatusCode__c.intValue(),
-                                                                       afir.Id);
+                                                                       afir.Id,
+                                                                       afir.ExtraInfo__c);
 
         
         try {

@@ -1,29 +1,29 @@
 /* Sample function HTTP request
 {
+  Set on request as 'ce-sffncontex' header, base64 encoded:
   'context': {
-    'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze--MyFunction-2020-09-03T20:56:27.608444Z',
-    'apiVersion': '58.0',
+    'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze--MyFunction-2023-03-23T15:18:53.429-0700',
+    'apiVersion': '57.0',
     'function': 'MyFunction',
     'resource': 'https://...',
-    'source': 'urn:event:from:salesforce/<instance>/<orgId>/<sourceId, eg Apex Class Id>',
-    'type': 'com.salesforce.function.invoke.sync'
-    'namespace': '',
+    'source': 'urn:event:from:salesforce/<instance>/<orgId>/<platform origin, eg apex>',
+    'type': 'com.salesforce.function.invoke.sync',
+    'requestTime': '2023-03-23T15:18:53.429-0700',
     'asyncFunctionInvocationRequestId': '<id>',
     'permissionSets': '[ 'MyPermissionSet' ]'
-  },
+  }
+
+  Set on request as 'ce-sfcontext' header, base64 encoded:
   'userContext': {
     'orgId': '00Dxx0000006IYJ',
     'userId': '005xx000001X8Uz',
-    'onBehalfOfUserId': '',
     'username': 'admin@example.com',
     'onBehalfOfUserId': '',
-    'salesforceBaseUrl': 'http://pistachio-virgo-1063-dev-ed.localhost.internal.salesforce.com:6109',
-    'orgDomainUrl': 'http://pistachio-virgo-1063-dev-ed.localhost.internal.salesforce.com:6109'
+    'salesforceBaseUrl': 'https://na1.salesforce.com',
+    'orgDomainUrl': 'https://mycompany.my.salesforce.com',
+	'namespace': '',
   }
 }
-
-Content is base64 encoded.
-
 */
 global class FunctionInvocationRequest {
 
@@ -37,8 +37,7 @@ global class FunctionInvocationRequest {
         public String resource { get { return resource; } set { resource = value; } }
         String source;
         String type;
-        // TODO: Move to UserContext
-        String namespace;
+        String requestTime;
         String asyncFunctionInvocationRequestId;
         List<String> permissionSets;
 
@@ -51,7 +50,7 @@ global class FunctionInvocationRequest {
             this.resource = builder.resource;
             this.source = builder.source;
             this.type = builder.type;
-            this.namespace = builder.namespace;
+            this.requestTime = builder.requestTime;            
             this.asyncFunctionInvocationRequestId = builder.asyncFunctionInvocationRequestId;
             this.permissionSets = builder.permissionSets;
         }
@@ -65,6 +64,7 @@ global class FunctionInvocationRequest {
         private String resource;
         private String source;
         private String type;
+        private String requestTime;
         private String namespace;
         private String asyncFunctionInvocationRequestId;
         private List<String> permissionSets;
@@ -98,9 +98,9 @@ global class FunctionInvocationRequest {
             this.type = type;
             return this;
         }
-
-        public ContextBuilder namespace(String namespace) {
-            this.namespace = namespace;
+        
+        public ContextBuilder requestTime(String requestTime) {
+            this.requestTime = requestTime;
             return this;
         }
 
@@ -133,6 +133,9 @@ global class FunctionInvocationRequest {
             if (String.isBlank(type)) {
                 throw new IllegalStateException('Type is required');
             }
+            if (String.isBlank(requestTime)) {
+                throw new IllegalStateException('Request Time is required');
+            }
             if (type.endsWith('.async') && String.isBlank(asyncFunctionInvocationRequestId)) {
                 throw new IllegalStateException('AsyncFunctionInvocationRequest.Id is required');
             }
@@ -148,6 +151,7 @@ global class FunctionInvocationRequest {
         String onBehalfOfUserId;
         String salesforceBaseUrl;
         String orgDomainUrl;
+        String namespace;
 
         private UserContext() {}
 
@@ -158,6 +162,7 @@ global class FunctionInvocationRequest {
             this.onBehalfOfUserId = builder.onBehalfOfUserId;
             this.salesforceBaseUrl = builder.salesforceBaseUrl;
             this.orgDomainUrl = builder.orgDomainUrl;
+            this.namespace = builder.namespace;
         }
     }
 
@@ -169,6 +174,7 @@ global class FunctionInvocationRequest {
         private String onBehalfOfUserId;
         private String salesforceBaseUrl;
         private String orgDomainUrl;
+        private String namespace;
 
         public UserContextBuilder orgId(String orgId) {
             this.orgId = orgId;
@@ -197,6 +203,11 @@ global class FunctionInvocationRequest {
 
         public UserContextBuilder orgDomainUrl(String orgDomainUrl) {
             this.orgDomainUrl = orgDomainUrl;
+            return this;
+        }
+        
+        public UserContextBuilder namespace(String namespace) {
+            this.namespace = namespace;
             return this;
         }
 
@@ -237,9 +248,23 @@ global class FunctionInvocationRequest {
     public UserContext getUserContext() {
         return this.userContext;
     }
+    
+    public void setContextHeaders(HttpRequest functionRequest) {
+        functionRequest.setHeader('ce-specversion', '1.0');
+        functionRequest.setHeader('ce-id', context.id);
+        functionRequest.setHeader('ce-source', context.source);
+        functionRequest.setHeader('ce-type', context.type);
+        functionRequest.setHeader('ce-time', context.requestTime);
+        functionRequest.setHeader('ce-sffncontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(context))));
+        functionRequest.setHeader('ce-sfcontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(userContext))));
+    }
 
-    public String toEncodedJSON() {
-        return EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(this)));
+    public String toJSON() {
+        return JSON.serialize(this);
+    }
+    
+    public static FunctionInvocationRequest fromJSON(String functionInvocationRequestJson) {
+        return (FunctionInvocationRequest)JSON.deserializeStrict(functionInvocationRequestJson, FunctionInvocationRequest.class);
     }
 
     public class FunctionInvocationRequestBuilder {

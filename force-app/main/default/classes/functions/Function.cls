@@ -3,14 +3,7 @@ global class Function {
     public class InvalidFunctionException extends Exception { }
 
     public class InvalidFunctionInvocationException extends Exception { }
-
-    // TODO: Dynamic look up
-    final static String FUNCTION_URL = 'http://localhost:3000';
-    final static String SYNC_FUNCTION_URL = FUNCTION_URL + '/sync';
-    final static String ASYNC_FUNCTION_URL = FUNCTION_URL + '/async';
     
-    // TODO: Dynamic look up - based on SF version or calling API version?
-    final static String API_VERSION = '57.0';
     final static String SYNC_TYPE = 'com.salesforce.function.invoke.sync';
     final static String ASYNC_TYPE = 'com.salesforce.function.invoke.async';
 
@@ -37,19 +30,8 @@ global class Function {
      * Throws NoDataFoundException when FunctionReference is not found.
      */
     global static Function get(String projectFunctionRef) {
-        // TODO: Move to utility method
-        FunctionReference__mdt functionReference = null;
-        try {
-            functionReference = [SELECT MasterLabel, DeveloperName, Endpoint__c FROM FunctionReference__mdt WHERE DeveloperName = :projectFunctionRef];
-        } catch (Exception ex) {
-            System.debug('Unable to retrieve FunctionReference__mdt for ' + projectFunctionRef + ': ' + ex.getMessage());
-        }        
-        if (null == functionReference || null == functionReference.Endpoint__c) {
-            throw new InvalidFunctionException('Invalid function: ' + projectFunctionRef);
-        }
-
         // null namespace applies component's namespace
-        return new Function(null, projectFunctionRef, functionReference);
+        return get(null, projectFunctionRef);
     }
 
     /**
@@ -60,60 +42,80 @@ global class Function {
      * null namespace designates applying parent component's namespace for FunctionReference lookup.
      */
     global static Function get(String namespace, String projectFunctionRef) {
-        // TODO: Handle namespace
-        // TODO: Move to utility method
         FunctionReference__mdt functionReference = null;
         try {
-            functionReference = [SELECT MasterLabel, DeveloperName, Endpoint__c FROM FunctionReference__mdt WHERE DeveloperName = :projectFunctionRef];
+            functionReference = [SELECT Endpoint__c, PermissionSetOrGroup__c FROM FunctionReference__mdt WHERE DeveloperName = :projectFunctionRef AND NamespacePrefix = :namespace];
         } catch (Exception ex) {
-            System.debug('Unable to retrieve FunctionReference__mdt for ' + projectFunctionRef + ': ' + ex.getMessage());
+            System.debug('Unable to retrieve FunctionReference__mdt for ' + namespace + '__' + projectFunctionRef + ': ' + ex.getMessage());
         }       
+        
+        // Ensure exists and has endpoint
         if (null == functionReference || null == functionReference.Endpoint__c) {
             throw new InvalidFunctionException('Invalid function: ' + projectFunctionRef);
+        }
+        
+        // If provided, ensure that:
+        // (1) PermissionSet or PermissionSetGroup exists, 
+        // (2) user is assigned to PermissionSet or PermissionSetGroup, and 
+        // (3) PermissionSet or PermissionSetGroup is session-based.
+        if (null != functionReference.PermissionSetOrGroup__c) {
+            List<PermissionSetAssignment> assignments = null;
+            try {
+                assignments = 
+                	[SELECT PermissionSet.HasActivationRequired FROM PermissionSetAssignment WHERE Assignee.Id = :UserInfo.getUserId() AND PermissionSet.Name = :functionReference.PermissionSetOrGroup__c];
+            } catch (Exception ex) {
+                throw new InvalidFunctionException('Unable to validate PermissionSetAssignment for user ' + UserInfo.getUserName() + ' and PermissionSetOrGroup \'' + functionReference.PermissionSetOrGroup__c + '\': '+ ex.getMessage());
+            }
+            
+            if (null == assignments || assignments.size() == 0 || assignments.get(1).PermissionSet.HasActivationRequired == false) {
+                throw new InvalidFunctionException('PermissionSetOrGroup \'' + functionReference.PermissionSetOrGroup__c + '\' not found or user ' + UserInfo.getUserName() + ' is not assigned or PermissionSetOrGroup is not session-based.');
+            }            
         }
 
         return new Function(namespace, projectFunctionRef, functionReference);
     }
 
     /**
-     * Synchronously invoke function.     * 
+     * Synchronously invoke function.
      */
     global FunctionInvocation invoke(String payloadJson) {
         return invoke(payloadJson, new List<String>());
     }
-
+    
+    /**
+     * Synchronously invoke function activating given session-based Permission Sets defining function org access.
+     */
     global FunctionInvocation invoke(String payloadJson, List<String> sessionBasedPermSets) {
-        if (!String.isBlank(payloadJson)) {
-            // REVIEWME: This may bloat head size; worth checking?
-            try {
-                JSON.deserializeUntyped(payloadJson);
-            } catch(Exception ex) {
-                throw new InvalidFunctionInvocationException('Invalid payload format: expected JSON');
-            }
+        return invoke(new FunctionsMetadataAuthProvider(functionReference), payloadJson, sessionBasedPermSets);
+    }
+
+    /**
+     * Synchronously invoke function generating a token with given FunctionsAuthProvider and activating given 
+     * session-based Permission Sets that define function's org access.
+     */
+    global FunctionInvocation invoke(FunctionsAuthProvider authProvider, String payloadJson, List<String> sessionBasedPermSets) {
+        String accessToken = authProvider.generateToken();
+        if (null == accessToken) {
+            throw new InvalidFunctionInvocationException('AccessToken not provided');
         }
+        
+        String requestTime = Datetime.now().format('yyyy-MM-dd\'T\'HH:mm:ss.SSSZ');
+        String requestId = generateRequestId(requestTime);
+        String resource = functionReference.Endpoint__c + '/sync';
+        FunctionInvocationRequest functionRequestContext = generateContext(requestId,
+                                                                           functionReference.APIVersion__c,
+                                                                           SYNC_TYPE, 
+                                                                           resource, 
+                                                                           requestTime,
+                                                                           '',
+                                                                           sessionBasedPermSets);
 
-        String requestId = generateRequestId('');  // TODO: Fix null
-        FunctionInvocationRequest functionRequestHeader = generateContext(requestId, 
-                                                                          SYNC_TYPE, 
-                                                                          functionReference.Endpoint__c + '/sync', 
-                                                                          '',
-                                                                          sessionBasedPermSets);
-
-        System.debug('Invoking sync function ' + getFunctionName() + ' [' + requestId + ']');
-
-        Http httpConn = new Http();
-        HttpRequest functionRequest = new HttpRequest();
-        functionRequest.setEndpoint(functionRequestHeader.getContext().resource);
-        functionRequest.setMethod('POST');
-        functionRequest.setHeader('Content-Type', 'application/json');
-        // TODO: getSessionId() is null for AutoProc user
-        // REVIEWME: SID is used to validate the incoming request is from a user in this org
-        functionRequest.setHeader('Authorization', 'Bearer ' + System.UserInfo.getSessionId());
-        functionRequest.setHeader('request-id', functionRequestHeader.getContext().id); // To be logged by proxy framework
-        functionRequest.setHeader('X-Request-Id', functionRequestHeader.getContext().id);
-        functionRequest.setHeader('X-Context', functionRequestHeader.toEncodedJSON());
+        HttpRequest functionRequest = Function.generateRequest(requestId,
+                                                               resource,
+                                                               payloadJson,
+                                                               functionRequestContext,
+                                                               accessToken);
         functionRequest.setTimeout(120000);
-        functionRequest.setBody(payloadJson);
         
         FunctionInvocationStatus status = FunctionInvocationStatus.SUCCESS;
         Integer statusCode = 0;
@@ -122,6 +124,8 @@ global class Function {
         String extraInfo = '';
         Long startTime = DateTime.now().getTime();
         try {
+            System.debug('Invoking sync function ' + getFunctionName() + ' [' + requestId + ']...');
+            Http httpConn = new Http();
             HttpResponse functionResponse = httpConn.send(functionRequest);
             statusCode = functionResponse.getStatusCode();
             body = functionResponse.getBody();
@@ -135,43 +139,55 @@ global class Function {
         Long totalTime = DateTime.now().getTime() - startTime;
 
         System.debug('Invoked sync function ' + getFunctionName() + ' in ' + totalTime + 'ms' + ' [' + requestId + ']');
-        System.debug('Extra info: ' + extraInfo + ' [' + requestId + ']');
 
         if (200 != statusCode) {
-            System.debug('FAILURE: Async invocation request for function ' + getFunctionName() + ' [' + statusCode + ']: ' +
+            System.debug('FAILURE: Sync invocation request for function ' + getFunctionName() + ' [' + statusCode + ']: ' +
                 body + ' [' + requestId + ']');
         } else {
             System.debug('Successfully sent async invocation request for function ' + getFunctionName() + ' [' + requestId + ']');
         }
 
         // TODO: Review status and error values/fields
-        return new FunctionInvocationImpl(functionRequestHeader.getContext().id,
+        return new FunctionInvocationImpl(requestId,
                                           body,
                                           status.name(),
                                           error,
                                           statusCode,
-                                          null);
+                                          null,
+                                          extraInfo);
     }
 
     /**
      * Asynchronously invoke function.
      */
-    global FunctionInvocation invoke(String payloadjson, FunctionCallback callback) {
-        return invoke(payloadjson, new List<String>(), callback);
+    global FunctionInvocation invoke(String payloadJson, FunctionCallback callback) {
+        return invoke(payloadJson, new List<String>(), callback);
+    }
+    
+    /**
+     * Asynchronously invoke function activating given session-based Permission Sets that define function's org access.
+     */
+    global FunctionInvocation invoke(String payloadjson, 
+                                     List<String> sessionBasedPermSets, 
+                                     FunctionCallback callback) {
+        return invoke(new FunctionsMetadataAuthProvider(functionReference), payloadJson, sessionBasedPermSets, callback);
     }
 
-    global FunctionInvocation invoke(String payloadjson, List<String> sessionBasedPermSets, FunctionCallback callback) {
-        if (null == callback) {
-            throw new InvalidFunctionInvocationException('FunctionCallback not provided');
+    /**
+     * Asynchronously invoke function generating a token with given FunctionsAuthProvider and activating given 
+     * session-based Permission Sets that define function's org access.
+     */
+    global FunctionInvocation invoke(FunctionsAuthProvider authProvider, 
+                                     String payloadJson, 
+                                     List<String> sessionBasedPermSets, 
+                                     FunctionCallback callback) {
+        if (null == authProvider) {
+            throw new InvalidFunctionInvocationException('FunctionsAuthProvider not provided');
         }
-
-        if (!String.isBlank(payloadJson)) {
-            // REVIEWME: This may bloat head size; worth checking?
-            try {
-                JSON.deserializeUntyped(payloadJson);
-            } catch(Exception ex) {
-                throw new InvalidFunctionInvocationException('Invalid payload format: expected JSON');
-            }
+                                         
+        String accessToken = authProvider.generateToken();
+        if (null == accessToken) {
+            throw new InvalidFunctionInvocationException('AccessToken not provided');
         }
 
         // TODO: Set AFIR fields as required - callback, eg
@@ -195,13 +211,16 @@ global class Function {
 
         // Generate context and save to AFIR
         String resource = functionReference.Endpoint__c + '/async';
-        String requestId = generateRequestId(asyncFIR.Id);
-        String functionRequestHeaderJson = generateContext(requestId, 
-                                                           ASYNC_TYPE, 
-                                                           resource, 
-                                                           asyncFIR.Id,
-                                                           sessionBasedPermSets)
-                                                           .toEncodedJSON();
+        String requestTime = Datetime.now().format('yyyy-MM-dd\'T\'HH:mm:ss.SSSZ');
+        String requestId = generateRequestId(asyncFIR.Id, requestTime);
+        FunctionInvocationRequest functionInvocationRequest = generateContext(requestId, 
+                                                                              functionReference.APIVersion__c,
+                                                                              ASYNC_TYPE, 
+                                                                              resource, 
+                                                                              requestTime,
+                                                                              asyncFIR.Id,
+                                                                              sessionBasedPermSets);
+		String functionRequestHeaderJson = functionInvocationRequest.toJSON();
         asyncFIR.RequestId__c = requestId;
         asyncFIR.Context__c = functionRequestHeaderJson;
         upsert asyncFIR;
@@ -211,16 +230,28 @@ global class Function {
                                    resource, 
                                    payloadjson, 
                                    functionRequestHeaderJson, 
-                                   System.UserInfo.getSessionId(),
+                                   accessToken,
                                    asyncFIR.Id);
         System.debug('Queued async function invocation of function ' + getFunctionName() + ' [' + requestId + ']');
 
         return new FunctionInvocationImpl(requestId, '', FunctionInvocationStatus.PENDING.name(), '', 0, asyncFIR.Id);
     }
+    
 
-    private String generateRequestId(String uuid) {
-        Long requestTime = DateTime.now().getTime();
-        if ('' == uuid) {
+    //   P R I V A T E
+
+    private String generateRequestId(String requestTime) {
+        return generateRequestId(null, requestTime);
+    }
+    
+    /**
+     * Generate unique request id used to track the function's request.
+     * 
+     * Format: <OrgId>-<Current Request Id>-<UUID or AsyncFunctionInvocationRequest__c.Id>-<Function Name>-<Datetime>
+     * Eg: 00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-[UUID or AsyncFunctionInvocationRequest__c.Id]-MyFunction-2023-03-23T15:18:53.429-0700
+     */
+    private String generateRequestId(String uuid, String requestTime) {
+        if (null == uuid) {
             uuid = EncodingUtil.base64encode(Crypto.generateDigest('SHA1', Blob.valueOf(getFunctionName() + requestTime)));
         }
 
@@ -228,28 +259,27 @@ global class Function {
             Request.getCurrent().getRequestId() + '-' + 
             uuid + '-' + 
             getFunctionName() + '-' +
-            DateTime.now().getTime();
+            requestTime;
     }
 
     private FunctionInvocationRequest generateContext(String requestId,
+                                                      String apiVersion,
                                                       String type, 
                                                       String resource,
+                                                      String requestTime,
                                                       String asyncFunctionInvocationRequestId,
                                                       List<String> sessionBasedPermSets) {
         String instanceName = [SELECT InstanceName FROM Organization LIMIT 1].InstanceName;
-        // TODO: Get Id of calling Apex class
-        String classId = [SELECT Id FROM ApexClass WHERE Name = 'Function'].Id;
         return new FunctionInvocationRequest.FunctionInvocationRequestBuilder()
             .context(new FunctionInvocationRequest.ContextBuilder()
                 .id(requestId)
-                // TODO: API version of invoking class or latest API version?
-                .apiVersion(API_VERSION)
+                .apiVersion(apiVersion)
                 .function(projectFunctionRef)
-                // TODO: URL of function
                 .resource(resource)
-                .source('urn:event:from:salesforce/' + instanceName + '/' + System.UserInfo.getOrganizationId() + '/apex/' + classId)
+                 // TODO: If desired, include calling class's Id (obtain via new DmlException() r)
+                .source('urn:event:from:salesforce/' + instanceName + '/' + System.UserInfo.getOrganizationId() + '/apex')
                 .type(type)
-                .namespace(this.namespace)
+                .requestTime(requestTime)                
                 .asyncFunctionInvocationRequestId(asyncFunctionInvocationRequestId)
                 .permissionSets(sessionBasedPermSets)
                 .build())
@@ -259,14 +289,16 @@ global class Function {
                 .userName(System.UserInfo.getUserName())
                 .salesforceBaseUrl(System.URL.getSalesforceBaseUrl().toExternalForm())
                 .orgDomainUrl(System.URL.getOrgDomainUrl().toExternalForm())
+                .namespace(this.namespace)
                 .build())
             .build();
     }
 
-    // https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_classes_annotation_future.htm
     /**
      * Use the Future annotation to identify methods that are executed asynchronously. When you specify Future,
      * the method executes when Salesforce has available resources.
+     * 
+     * https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_classes_annotation_future.htm
      * 
      * Complex type parameters are not permitted.
      */
@@ -276,35 +308,28 @@ global class Function {
                                           String resource,
                                           String payloadJson,
                                           String functionRequestContextJson,
-                                          String sessionId,
+                                          String accessToken,
                                           String asyncFunctionInvocationRequestId) {
 
         System.debug('Invoke async function ' + functionName + ' [' + requestId + ']');
-
-        Http httpConn = new Http();
-        HttpRequest functionRequest = new HttpRequest();
-        functionRequest.setEndpoint(resource);
-        functionRequest.setMethod('POST');
-        functionRequest.setHeader('Content-Type', 'application/json');
-        // TODO: getSessionId() is null for AutoProc user
-        functionRequest.setHeader('Authorization', 'Bearer ' + sessionId);
-        functionRequest.setHeader('request-id', requestId); // To be logged by proxy framework
-        functionRequest.setHeader('X-Request-Id', requestId);
-        functionRequest.setHeader('X-Context', functionRequestContextJson);
-        functionRequest.setTimeout(120000);
-        functionRequest.setBody(payloadJson);
+       
+        HttpRequest functionRequest = generateRequest(requestId,
+                                                      resource,
+                                                      payloadJson,
+                                                      functionRequestContextJson,
+                                                      accessToken);
         
         Integer statusCode = 0;
         String body = '';
         String extraInfo = '';
         Long startTime = DateTime.now().getTime();
         try {
+            Http httpConn = new Http();
             HttpResponse functionResponse = httpConn.send(functionRequest);
             statusCode = functionResponse.getStatusCode();
             body = functionResponse.getBody();
             extraInfo = functionResponse.getHeader('x-extra-info');
             // TODO: Validate request and response requestId
-
         } catch(Exception ex) {
             body = ex.getMessage();
         }
@@ -331,4 +356,32 @@ global class Function {
 
         System.debug('Updated AsyncFunctionInvocationRequest__c[' + asyncFunctionInvocationRequestId + '] for function ' + functionName + ' [' + requestId + ']');
     }
+    
+    private static HttpRequest generateRequest(String requestId,
+                                               String resource,
+                                               String payloadJson,
+                                               String functionRequestContextJson,
+                                               String accessToken) {
+		return generateRequest(requestId, resource, payloadJson, FunctionInvocationRequest.fromJSON(functionRequestContextJson), accessToken);
+	}
+    
+    private static HttpRequest generateRequest(String requestId,
+                                               String resource,
+                                               String payloadJson,
+                                               FunctionInvocationRequest functionRequestContext,
+                                               String accessToken) {
+        HttpRequest functionRequest = new HttpRequest();
+        functionRequest.setEndpoint(resource);
+        functionRequest.setMethod('POST');
+        functionRequest.setHeader('Content-Type', 'application/json');
+        functionRequest.setHeader('Authorization', 'Bearer ' + accessToken);
+        functionRequest.setHeader('request-id', requestId);   // Logged by proxy framework
+        functionRequest.setHeader('X-Request-Id', requestId); // Logged by function
+        functionRequestContext.setContextHeaders(functionRequest);
+        functionRequest.setTimeout(120000);
+        functionRequest.setBody(payloadJson);
+        return functionRequest;
+    }
+    
+    
 }

@@ -5,14 +5,16 @@ global class FunctionInvocationImpl implements FunctionInvocation {
     private FunctionInvocationStatus status;
     private FunctionInvocationError error;
     private String asyncFunctionInvocationRequestId;
+    private Map<String,Object> extraInfoMap;
 
     public FunctionInvocationImpl(
             String requestId,
             String response,
             String status,
             String errorMessage,
-            Integer statusCode) {
-        this(requestId, response, status, errorMessage, statusCode, null);
+            Integer statusCode,
+    		String extraInfoEncodedJson) {
+        this(requestId, response, status, errorMessage, statusCode, null, extraInfoEncodedJson);
     }
 
     public FunctionInvocationImpl(
@@ -21,12 +23,19 @@ global class FunctionInvocationImpl implements FunctionInvocation {
             String status,
             String errorMessage,
             Integer statusCode,
-            String asyncFunctionInvocationRequestId) {
+            String asyncFunctionInvocationRequestId,
+            String extraInfoEncodedJson) {
         this.requestId = requestId;
         this.response = response;
         this.status = parseStatus(status);
         this.error = errorMessage == null ? null : new FunctionInvocationErrorImpl(errorMessage, parseErrorType(statusCode));
         this.asyncFunctionInvocationRequestId = asyncFunctionInvocationRequestId;
+        try {
+            this.extraInfoMap = (Map<String,Object>)JSON.deserializeUntyped(String.valueOf(EncodingUtil.Base64Decode(extraInfoEncodedJson)));
+        } catch(Exception ex) {
+            System.debug('Unable to parse ExtraInfo: ' + ex.getMessage());
+            this.extraInfoMap = new Map<String,Object>();
+        }
     }
 
     global String getInvocationId() {
@@ -47,6 +56,19 @@ global class FunctionInvocationImpl implements FunctionInvocation {
 
     global FunctionInvocationError getError() {
         return error;
+    }
+    
+    // Was error in function?
+    global Boolean isFunctionError() {
+        return Boolean.valueOf(extraInfoMap.get('isFunctionError'));
+    }
+    
+    global Integer getExecTimeMs() {
+        return Integer.valueOf(extraInfoMap.get('execTimeMs'));
+    }
+    
+    global String getStacktrace() {
+        return String.valueOf(extraInfoMap.get('stack'));
     }
 
     // Parse in Apex, because it's a lot less cryptic than constructing an Apex enum in Java.
