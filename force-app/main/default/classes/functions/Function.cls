@@ -271,9 +271,9 @@ global class Function {
                                                       List<String> sessionBasedPermSets) {
         String instanceName = [SELECT InstanceName FROM Organization LIMIT 1].InstanceName;
         return new FunctionInvocationRequest.FunctionInvocationRequestBuilder()
+            .apiVersion(apiVersion)
             .context(new FunctionInvocationRequest.ContextBuilder()
                 .id(requestId)
-                .apiVersion(apiVersion)
                 .function(projectFunctionRef)
                 .resource(resource)
                  // TODO: If desired, include calling class's Id (obtain via new DmlException() r)
@@ -382,6 +382,4 @@ global class Function {
         functionRequest.setBody(payloadJson);
         return functionRequest;
     }
-    
-    
 }

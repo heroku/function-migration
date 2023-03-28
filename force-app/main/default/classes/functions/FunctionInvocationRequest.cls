@@ -1,9 +1,8 @@
 /* Sample function HTTP request
 {
-  Set on request as 'ce-sffncontex' header, base64 encoded:
-  'context': {
-    'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze--MyFunction-2023-03-23T15:18:53.429-0700',
-    'apiVersion': '57.0',
+  Context of the function request.  Set on request as 'ce-sffncontext' header, base64 encoded.
+  {
+    'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-uuid-MyFunction-2023-03-23T15:18:53.429-0700',
     'function': 'MyFunction',
     'resource': 'https://...',
     'source': 'urn:event:from:salesforce/<instance>/<orgId>/<platform origin, eg apex>',
@@ -13,7 +12,9 @@
     'permissionSets': '[ 'MyPermissionSet' ]'
   }
 
-  Set on request as 'ce-sfcontext' header, base64 encoded:
+  Function-provided context. Set on request as 'ce-sfcontext' header, base64 encoded.
+  'apiVersion': '57.0',
+  'payloadVersion': '0.1',
   'userContext': {
     'orgId': '00Dxx0000006IYJ',
     'userId': '005xx000001X8Uz',
@@ -29,10 +30,9 @@ global class FunctionInvocationRequest {
 
     public class IllegalStateException extends Exception {}
 
-    public class Context {
+    public class FunctionContext {
 
         public String id { get { return id; } set { id = value; } }
-        String apiVersion;
         String function;
         public String resource { get { return resource; } set { resource = value; } }
         String source;
@@ -41,11 +41,10 @@ global class FunctionInvocationRequest {
         String asyncFunctionInvocationRequestId;
         List<String> permissionSets;
 
-        private Context() {}
+        private FunctionContext() {}
 
-        public Context(ContextBuilder builder) {
+        public FunctionContext(FunctionContextBuilder builder) {
             this.id = builder.id;
-            this.apiVersion = builder.apiVersion;
             this.function = builder.function;
             this.resource = builder.resource;
             this.source = builder.source;
@@ -56,10 +55,9 @@ global class FunctionInvocationRequest {
         }
     }
 
-    public class ContextBuilder {
+    public class FunctionContextBuilder {
 
         private String id;
-        private String apiVersion;
         private String function;
         private String resource;
         private String source;
@@ -69,57 +67,49 @@ global class FunctionInvocationRequest {
         private String asyncFunctionInvocationRequestId;
         private List<String> permissionSets;
 
-        public ContextBuilder id(String id) {
+        public FunctionContextBuilder id(String id) {
             this.id = id;
             return this;
         }
 
-        public ContextBuilder apiVersion(String apiVersion) {
-            this.apiVersion = apiVersion;
-            return this;
-        }
-
-        public ContextBuilder function(String function) {
+        public FunctionContextBuilder function(String function) {
             this.function = function;
             return this;
         }
 
-        public ContextBuilder resource(String resource) {
+        public FunctionContextBuilder resource(String resource) {
             this.resource = resource;
             return this;
         }
 
-        public ContextBuilder source(String source) {
+        public FunctionContextBuilder source(String source) {
             this.source = source;
             return this;
         }
 
-        public ContextBuilder type(String type) {
+        public FunctionContextBuilder type(String type) {
             this.type = type;
             return this;
         }
         
-        public ContextBuilder requestTime(String requestTime) {
+        public FunctionContextBuilder requestTime(String requestTime) {
             this.requestTime = requestTime;
             return this;
         }
 
-        public ContextBuilder asyncFunctionInvocationRequestId(String asyncFunctionInvocationRequestId) {
+        public FunctionContextBuilder asyncFunctionInvocationRequestId(String asyncFunctionInvocationRequestId) {
             this.asyncFunctionInvocationRequestId = asyncFunctionInvocationRequestId;
             return this;
         }
 
-        public ContextBuilder permissionSets(List<String> permissionSets) {
+        public FunctionContextBuilder permissionSets(List<String> permissionSets) {
             this.permissionSets = permissionSets;
             return this;
         }
 
-        public Context build() {
+        public FunctionContext build() {
             if (String.isBlank(id)) {
                 throw new IllegalStateException('Id is required');
-            }
-            if (String.isBlank(apiVersion)) {
-                throw new IllegalStateException('API Version is required');
             }
             if (String.isBlank(function)) {
                 throw new IllegalStateException('Function is required');
@@ -139,7 +129,7 @@ global class FunctionInvocationRequest {
             if (type.endsWith('.async') && String.isBlank(asyncFunctionInvocationRequestId)) {
                 throw new IllegalStateException('AsyncFunctionInvocationRequest.Id is required');
             }
-            return new Context(this);
+            return new FunctionContext(this);
         }
     }
 
@@ -175,6 +165,11 @@ global class FunctionInvocationRequest {
         private String salesforceBaseUrl;
         private String orgDomainUrl;
         private String namespace;
+
+        public UserContextBuilder apiVersion(String apiVersion) {
+            this.apiVersion = apiVersion;
+            return this;
+        }
 
         public UserContextBuilder orgId(String orgId) {
             this.orgId = orgId;
@@ -231,32 +226,48 @@ global class FunctionInvocationRequest {
         }
     }
 
-    public Context context;
-    public UserContext userContext;
+    class SalesforceContext {
+        public String apiVersion;
+        public String payloadVersion;
+        public UserContext userContext;
+
+        SalesforceContext(String apiVersion, String payloadVersion, UserContext userContext) {
+            this.apiVersion = apiVersion;
+            this.payloadVersion = payloadVersion;
+            this.userContext = userContext;
+        }
+
+        String getApiVersion() {
+            return apiVersion;
+        }
+
+        String getPayloadVersion() {
+            return payloadVersion;
+        }
+
+        UserContext getUserContext() {
+            return this.userContext;
+        }
+    }
+
+    public SalesforceContext sfContext;
+    public FunctionContext functionContext;
 
     private FunctionInvocationRequest() {}
 
     public FunctionInvocationRequest(FunctionInvocationRequestBuilder builder) {
-        this.context = builder.context;
-        this.userContext = builder.userContext;
-    }
-
-    public Context getContext() {
-        return this.context;
-    }
-
-    public UserContext getUserContext() {
-        return this.userContext;
+        this.functionContext = builder.functionContext;
+        this.sfContext = new SalesforceContext(builder.apiVersion, '0.1', builder.userContext);
     }
     
     public void setContextHeaders(HttpRequest functionRequest) {
         functionRequest.setHeader('ce-specversion', '1.0');
-        functionRequest.setHeader('ce-id', context.id);
-        functionRequest.setHeader('ce-source', context.source);
-        functionRequest.setHeader('ce-type', context.type);
-        functionRequest.setHeader('ce-time', context.requestTime);
-        functionRequest.setHeader('ce-sffncontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(context))));
-        functionRequest.setHeader('ce-sfcontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(userContext))));
+        functionRequest.setHeader('ce-id', functionContext.id);
+        functionRequest.setHeader('ce-source', functionContext.source);
+        functionRequest.setHeader('ce-type', functionContext.type);
+        functionRequest.setHeader('ce-time', functionContext.requestTime);
+        functionRequest.setHeader('ce-sffncontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(functionContext))));
+        functionRequest.setHeader('ce-sfcontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(sfContext))));
     }
 
     public String toJSON() {
@@ -269,8 +280,14 @@ global class FunctionInvocationRequest {
 
     public class FunctionInvocationRequestBuilder {
 
+        private String apiVersion;
         private Context context;
         private UserContext userContext;
+
+        public FunctionInvocationRequestBuilder apiVersion(String apiVersion) {
+            this.apiVersion = apiVersion;
+            return this;
+        }
 
         public FunctionInvocationRequestBuilder context(Context context) {
             this.context = context;
@@ -283,6 +300,9 @@ global class FunctionInvocationRequest {
         }
 
         public FunctionInvocationRequest build() {
+            if (null == apiVersion) {
+                throw new IllegalStateException('API Version is required');
+            }
             if (null == context) {
                 throw new IllegalStateException('Context is required');
             }

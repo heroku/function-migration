@@ -1,5 +1,5 @@
 trigger AsyncResponseHandlerTrigger on AsyncFunctionInvocationRequest__c (after update) {
-    for(AsyncFunctionInvocationRequest__c afir : Trigger.new) {
+    for (AsyncFunctionInvocationRequest__c afir : Trigger.new) {
         if (null == afir.StatusCode__c || 201 == afir.StatusCode__c)  {
             // TODO: Check for expected StatusCode__c values
             System.debug('Not handling ' + afir.Id + ': StatusCode__c not set or request is PENDING');

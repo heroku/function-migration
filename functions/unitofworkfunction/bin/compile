@@ -1,3 +1,7 @@
 #!/bin/sh
+cd $1
+npm install @heroku/sf-fx-runtime-nodejs --save-prod
+# TODO: Validate that node_modules/@heroku/sf-fx-runtime-nodejs/bin/cli.js exists
 cd $1/proxy
 npm install
+# TODO: Validate
