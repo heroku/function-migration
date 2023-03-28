@@ -3,16 +3,16 @@
   Context of the function request.  Set on request as 'ce-sffncontext' header, base64 encoded.
   {
     'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-uuid-MyFunction-2023-03-23T15:18:53.429-0700',
-    'function': 'MyFunction',
+    'functionName': 'MyFunction',
     'resource': 'https://...',
     'source': 'urn:event:from:salesforce/<instance>/<orgId>/<platform origin, eg apex>',
     'type': 'com.salesforce.function.invoke.sync',
     'requestTime': '2023-03-23T15:18:53.429-0700',
-    'asyncFunctionInvocationRequestId': '<id>',
+    'functionInvocationId': '<AsyncFunctionInvocationRequest__c.ID>',
     'permissionSets': '[ 'MyPermissionSet' ]'
   }
 
-  Function-provided context. Set on request as 'ce-sfcontext' header, base64 encoded.
+  Salesforce context - context of invoking Org. Set on request as 'ce-sfcontext' header, base64 encoded.
   'apiVersion': '57.0',
   'payloadVersion': '0.1',
   'userContext': {
@@ -33,24 +33,24 @@ global class FunctionInvocationRequest {
     public class FunctionContext {
 
         public String id { get { return id; } set { id = value; } }
-        String function;
+        String functionName;
         public String resource { get { return resource; } set { resource = value; } }
         String source;
         String type;
         String requestTime;
-        String asyncFunctionInvocationRequestId;
+        String functionInvocationId;
         List<String> permissionSets;
 
         private FunctionContext() {}
 
         public FunctionContext(FunctionContextBuilder builder) {
             this.id = builder.id;
-            this.function = builder.function;
+            this.functionName = builder.functionName;
             this.resource = builder.resource;
             this.source = builder.source;
             this.type = builder.type;
             this.requestTime = builder.requestTime;            
-            this.asyncFunctionInvocationRequestId = builder.asyncFunctionInvocationRequestId;
+            this.functionInvocationId = builder.functionInvocationId;
             this.permissionSets = builder.permissionSets;
         }
     }
@@ -58,13 +58,13 @@ global class FunctionInvocationRequest {
     public class FunctionContextBuilder {
 
         private String id;
-        private String function;
+        private String functionName;
         private String resource;
         private String source;
         private String type;
         private String requestTime;
         private String namespace;
-        private String asyncFunctionInvocationRequestId;
+        private String functionInvocationId;
         private List<String> permissionSets;
 
         public FunctionContextBuilder id(String id) {
@@ -72,8 +72,8 @@ global class FunctionInvocationRequest {
             return this;
         }
 
-        public FunctionContextBuilder function(String function) {
-            this.function = function;
+        public FunctionContextBuilder function(String functionName) {
+            this.functionName = functionName;
             return this;
         }
 
@@ -97,8 +97,8 @@ global class FunctionInvocationRequest {
             return this;
         }
 
-        public FunctionContextBuilder asyncFunctionInvocationRequestId(String asyncFunctionInvocationRequestId) {
-            this.asyncFunctionInvocationRequestId = asyncFunctionInvocationRequestId;
+        public FunctionContextBuilder asyncFunctionInvocationRequestId(String functionInvocationId) {
+            this.functionInvocationId = functionInvocationId;
             return this;
         }
 
@@ -111,7 +111,7 @@ global class FunctionInvocationRequest {
             if (String.isBlank(id)) {
                 throw new IllegalStateException('Id is required');
             }
-            if (String.isBlank(function)) {
+            if (String.isBlank(functionName)) {
                 throw new IllegalStateException('Function is required');
             }
             if (String.isBlank(resource)) {
@@ -126,7 +126,7 @@ global class FunctionInvocationRequest {
             if (String.isBlank(requestTime)) {
                 throw new IllegalStateException('Request Time is required');
             }
-            if (type.endsWith('.async') && String.isBlank(asyncFunctionInvocationRequestId)) {
+            if (type.endsWith('.async') && String.isBlank(functionInvocationId)) {
                 throw new IllegalStateException('AsyncFunctionInvocationRequest.Id is required');
             }
             return new FunctionContext(this);
