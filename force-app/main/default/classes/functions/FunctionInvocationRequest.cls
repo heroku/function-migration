@@ -264,6 +264,7 @@ global class FunctionInvocationRequest {
         functionRequest.setHeader('ce-specversion', '1.0');
         functionRequest.setHeader('ce-id', functionContext.id);
         functionRequest.setHeader('ce-source', functionContext.source);
+        functionRequest.setHeader('ce-datacontenttype', 'application/json');
         functionRequest.setHeader('ce-type', functionContext.type);
         functionRequest.setHeader('ce-time', functionContext.requestTime);
         functionRequest.setHeader('ce-sffncontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(functionContext))));

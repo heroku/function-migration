@@ -19,8 +19,7 @@
     "@fastify/autoload": "^5.0.0",
     "@fastify/http-proxy": "^8.4.0",
     "fastify": "^4.14.1",
+    "got": "^12.6.0",
     "jsonwebtoken": "^9.0.0"
-  },
-  "devDependencies": {
   }
 }
