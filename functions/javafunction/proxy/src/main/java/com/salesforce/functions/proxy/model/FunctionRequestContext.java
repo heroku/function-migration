@@ -1,17 +1,24 @@
 package com.salesforce.functions.proxy.model;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 
 public class FunctionRequestContext {
 
     private final HttpHeaders headers;
+    private final HttpMethod method;
     private String requestId;
     private String requestProvidedAccessToken;
     private SfFnContext sfFnContext;
     private SfContext sfContext;
 
-    public FunctionRequestContext(HttpHeaders headers) {
+    public FunctionRequestContext(HttpHeaders headers, HttpMethod method) {
         this.headers = headers;
+        this.method = method;
+    }
+
+    public HttpMethod getMethod() {
+        return method;
     }
 
     public HttpHeaders getHeaders() {

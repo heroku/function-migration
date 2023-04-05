@@ -12,8 +12,10 @@ import javax.validation.constraints.NotBlank;
 @ConfigurationProperties(prefix="proxy")
 public class ProxyConfig {
 
-    @Min(1)
-    private int functionPort;
+    @NotBlank
+    private String functionHost;
+    @NotBlank
+    private String functionPort;
     @NotBlank
     private String functionUrl;
     @NotBlank
@@ -24,12 +26,25 @@ public class ProxyConfig {
     private String encodedPrivateKey;
     private String audience;
     private String debugPort;
+    @NotBlank
+    private String sfFxRuntimeJarFilePath;
+    @NotBlank
+    private String functionDir;
 
-    public int getFunctionPort() {
+    @NotBlank
+    public String getFunctionHost() {
+        return functionHost;
+    }
+
+    public void setFunctionHost(String functionHost) {
+        this.functionHost = functionHost;
+    }
+
+    public String getFunctionPort() {
         return functionPort;
     }
 
-    public void setFunctionPort(int functionPort) {
+    public void setFunctionPort(String functionPort) {
         this.functionPort = functionPort;
     }
 
@@ -79,5 +94,21 @@ public class ProxyConfig {
 
     public void setDebugPort(String debugPort) {
         this.debugPort = debugPort;
+    }
+
+    public String getSfFxRuntimeJarFilePath() {
+        return sfFxRuntimeJarFilePath;
+    }
+
+    public void setSfFxRuntimeJarFilePath(String sfFxRuntimeJarFilePath) {
+        this.sfFxRuntimeJarFilePath = sfFxRuntimeJarFilePath;
+    }
+
+    public String getFunctionDir() {
+        return functionDir;
+    }
+
+    public void setFunctionDir(String functionDir) {
+        this.functionDir = functionDir;
     }
 }

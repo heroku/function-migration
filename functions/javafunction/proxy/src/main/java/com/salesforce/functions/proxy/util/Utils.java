@@ -24,21 +24,8 @@ public class Utils {
     public boolean isBlank(String str) {
         return null == str || "".equals(str);
     }
-    public boolean isValidJson(String maybeJson)  {
-        try {
-            defaultMapper.readTree(maybeJson);
-        } catch (JsonProcessingException ex) {
-            return false;
-        }
-
-        return true;
-    }
 
     public <T> T fromJson(String json, Class<T> clazz) throws JsonProcessingException {
-        return defaultMapper.readValue(json, clazz);
-    }
-
-    public <T> T fromJson(String json, TypeReference<T> clazz) throws JsonProcessingException {
         return defaultMapper.readValue(json, clazz);
     }
 
@@ -87,6 +74,10 @@ public class Utils {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + functionRequestContext.getRequestProvidedAccessToken());
         return headers;
+    }
+
+    public void debug(Logger logger, String requestId, String msg) {
+        logger.debug("[" + requestId + "]: " + msg);
     }
 
     public void info(Logger logger, String requestId, String msg) {

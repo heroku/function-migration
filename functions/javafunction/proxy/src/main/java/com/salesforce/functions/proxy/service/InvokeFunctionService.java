@@ -5,7 +5,6 @@ import com.salesforce.functions.proxy.model.AsyncFunctionInvocationRequest;
 import com.salesforce.functions.proxy.model.FunctionRequestContext;
 import com.salesforce.functions.proxy.model.SfContext;
 import com.salesforce.functions.proxy.model.SfFnContext;
-import com.salesforce.functions.proxy.util.Constants;
 import com.salesforce.functions.proxy.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +26,9 @@ import java.util.concurrent.ExecutionException;
 import static com.salesforce.functions.proxy.util.Constants.HEADER_EXTRA_INFO;
 
 @Service
-public class AsyncInvokeFunctionService {
+public class InvokeFunctionService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncInvokeFunctionService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InvokeFunctionService.class);
 
     @Autowired
     ProxyConfig proxyConfig;
@@ -40,11 +39,43 @@ public class AsyncInvokeFunctionService {
     @Autowired
     Utils utils;
 
+    public ResponseEntity syncInvokeFunction(FunctionRequestContext functionRequestContext, String body) {
+        String requestId = functionRequestContext.getRequestId();
+        SfFnContext sfFnContext = functionRequestContext.getSfFnContext();
+        utils.info(LOGGER, requestId,"Sync invoking function " + sfFnContext.getFunctionName() + "...");
+
+        // Forward request to the function
+        HttpEntity<String> entity = new HttpEntity<>(body, functionRequestContext.getHeaders());
+        ResponseEntity<String> responseEntity;
+        long startMs = System.currentTimeMillis();
+        try {
+            responseEntity = restTemplate.exchange(proxyConfig.getFunctionUrl(),
+                                                   functionRequestContext.getMethod(),
+                                                   entity,
+                    String.class);
+        } catch (HttpClientErrorException ex) {
+            return ResponseEntity
+                    .status(ex.getStatusCode())
+                    .headers(ex.getResponseHeaders())
+                    .body(ex.getResponseBodyAsString());
+        } finally {
+            utils.info(LOGGER, requestId,"Invoke function " + sfFnContext.getFunctionName() + " in " +
+                    (System.currentTimeMillis() - startMs) + "ms");
+        }
+
+        return responseEntity;
+    }
+
     @Async
-    public void invokeFunction(FunctionRequestContext functionRequestContext, String body) {
+    public void asyncInvokeFunction(FunctionRequestContext functionRequestContext, String body) {
+        String requestId = functionRequestContext.getRequestId();
+        SfFnContext sfFnContext = functionRequestContext.getSfFnContext();
+        utils.info(LOGGER, requestId,"Async invoking function " + sfFnContext.getFunctionName() + "...");
+
         // Forward request to the function
         HttpEntity<String> entity = new HttpEntity<>(body, functionRequestContext.getHeaders());
         CompletableFuture<ResponseEntity<String>> future = null;
+        long startMs = System.currentTimeMillis();
         try {
             future = CompletableFuture.completedFuture(
                     restTemplate.exchange(proxyConfig.getFunctionUrl(),
@@ -67,10 +98,11 @@ public class AsyncInvokeFunctionService {
         CompletableFuture.allOf(future);
         try {
             handleFunctionResponse(functionRequestContext, future.get());
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
+        } catch (Exception ex) {
+            utils.error(LOGGER, requestId,"Unable to save async function response: " + ex.getMessage());
+        } finally {
+            utils.info(LOGGER, requestId,"Invoke function " + sfFnContext.getFunctionName() + " in " +
+                    (System.currentTimeMillis() - startMs) + "ms");
         }
     }
 

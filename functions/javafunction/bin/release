@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+cat << EOF
+---
+addons: []
+default_process_types:
+  web: java -jar $APP_DIR/proxy/target/proxy-0.0.1.jar com.salesforce.functions.proxy.ProxyApplication
+EOF

@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.salesforce.functions.proxy</groupId>
 	<artifactId>proxy</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>proxy</name>
 	<description>proxy</description>
 
@@ -145,6 +145,25 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>com.googlecode.maven-download-plugin</groupId>
+				<artifactId>download-maven-plugin</artifactId>
+				<version>1.3.0</version>
+				<executions>
+					<execution>
+						<!-- the wget goal actually binds itself to this phase by default -->
+						<phase>process-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>https://repo1.maven.org/maven2/com/salesforce/functions/sf-fx-runtime-java-runtime/1.1.3/sf-fx-runtime-java-runtime-1.1.3-jar-with-dependencies.jar</url>
+							<outputDirectory>${project.build.directory}</outputDirectory>
+							<sha256>b8e17b6ee9889304cbd07958f86ac067cb58c7f6bdd324a87133d377f670adb5</sha256>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

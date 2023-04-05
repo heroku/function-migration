@@ -14,6 +14,8 @@ import java.util.concurrent.Executor;
 public class ProxyApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ProxyApplication.class, args);
+
+		java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 	}
 	@Bean
 	public RestTemplate getRestTemplate() {

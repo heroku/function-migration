@@ -27,22 +27,7 @@ public class StartFunction implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        List<String> functionStartCmd = Lists.newArrayList();
-        String javaFilePath = getJavaCmd().getAbsolutePath();
-        functionStartCmd.add(javaFilePath);
-        if (!utils.isBlank(proxyConfig.getDebugPort())) {
-            functionStartCmd.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=");
-            functionStartCmd.add(proxyConfig.getDebugPort());
-        }
-        functionStartCmd.add("-jar");
-        functionStartCmd.add("/tmp/sf-fx-runtime-java-runtime-1.1.3-jar-with-dependencies.jar");
-        functionStartCmd.add("serve");
-        functionStartCmd.add("/home/cwall/git/function-migration/functions/javafunction");
-        functionStartCmd.add("-h");
-        functionStartCmd.add("0.0.0.0");
-        functionStartCmd.add("-p");
-        functionStartCmd.add(String.valueOf(proxyConfig.getFunctionPort()));
-
+        List<String> functionStartCmd = assembleFunctionStartCommand();
         LOGGER.info("Starting function w/ args: " + String.join(" ", functionStartCmd));
         Process functionProcess = null;
         ProcessHandle functionProcessHandle = null;
@@ -60,21 +45,25 @@ public class StartFunction implements InitializingBean {
             throw new RuntimeException("Function process died");
         }
 
-        String output = loadStream(functionProcess.getInputStream());
-        LOGGER.info(output);
-        String error = loadStream(functionProcess.getErrorStream());
-        LOGGER.info(error);
-
         LOGGER.info("Started function started on port " + proxyConfig.getFunctionPort() + ", process pid " + functionProcessHandle.pid());
     }
 
-    private String loadStream(InputStream s) throws Exception {
-        BufferedReader br = new BufferedReader(new InputStreamReader(s));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = br.readLine()) != null)
-            sb.append(line).append("\n");
-        return sb.toString();
+    List<String> assembleFunctionStartCommand() throws IOException {
+        List<String> functionStartCmd = Lists.newArrayList();
+        String javaFilePath = getJavaCmd().getAbsolutePath();
+        functionStartCmd.add(javaFilePath);
+        if (!utils.isBlank(proxyConfig.getDebugPort())) {
+            functionStartCmd.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + proxyConfig.getDebugPort());
+        }
+        functionStartCmd.add("-jar");
+        functionStartCmd.add(proxyConfig.getSfFxRuntimeJarFilePath());
+        functionStartCmd.add("serve");
+        functionStartCmd.add(proxyConfig.getFunctionDir());
+        functionStartCmd.add("-h");
+        functionStartCmd.add(proxyConfig.getFunctionHost());
+        functionStartCmd.add("-p");
+        functionStartCmd.add(String.valueOf(proxyConfig.getFunctionPort()));
+        return functionStartCmd;
     }
 
     public File getJavaCmd() throws IOException {

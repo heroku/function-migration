@@ -352,7 +352,7 @@ class BaseRequestHandler {
         // Get Org's info via /userinfo API
         let userInfo;
         try {
-            userInfo = await got(url, opts).json();
+            userInfo = await this.request(url, opts);
         } catch (err) {
             throwError(`Unable to validate request (/userinfo): ${err.response.body}`, err.response.statusCode);
         }
@@ -422,7 +422,7 @@ class BaseRequestHandler {
         this.logger.info(`[${requestId}] Minting function ${isTest ? 'test ' : ' '}token for user ${sfContext.userContext.username}, audience ${jwtOpts.audience}, url ${url}, issuer ${jwtOpts.issuer.substring(0, 5)}...`);
         let body;
         try {
-            body = await got(url, oauthOpts).json();
+            body = await await this.request(url, opts);
         } catch (err) {
             const errResponse = JSON.parse(err.response.body);
             let errMsg = `Unable to mint function token: ${errResponse.error} (${errResponse.error_description})`;
@@ -468,7 +468,7 @@ class BaseRequestHandler {
             }
         });
 
-        const apiUrl = this.assembleSalesforceAPIUrl(sfContext.userContext.salesforceBaseUrl,
+        const url = this.assembleSalesforceAPIUrl(sfContext.userContext.salesforceBaseUrl,
                                                      sfContext.apiVersion,
                                               '/actions/standard/activateSessionPermSet');
         const opts = {
@@ -483,7 +483,7 @@ class BaseRequestHandler {
         // Activate!
         let activations;
         try {
-            activations = await got(apiUrl, opts).json();
+            activations = await this.request(url, opts);
         } catch (err) {
             let errMsg = err.response.body;
             try {
@@ -542,6 +542,11 @@ class BaseRequestHandler {
 
         // Set token on function request context
         this.assembleFunctionRequest(sfFnContext, functionsAccessToken);
+    }
+
+    async request(url, opts, json = true) {
+        const response = await got(url, opts);
+        return json ? response.json() : response;
     }
 }
 
@@ -625,7 +630,7 @@ export class AsyncRequestHandler extends BaseRequestHandler {
         // Update AsyncFunctionInvocationRequest__c
         let response;
         try {
-            response = await got(url, opts);
+            response = await this.request(url, opts, false);
         } catch (err) {
             let errMsg = err.response ? err.response.body : err.message;
             if (errMsg.includes('The requested resource does not exist')) {
@@ -663,7 +668,7 @@ export class AsyncRequestHandler extends BaseRequestHandler {
         let statusCode, body, extraInfo;
         try {
             // Invoke function!
-            const functionResponse = await got(config.functionUrl, opts);
+            const functionResponse = await this.request(config.functionUrl, opts, false);
             statusCode = functionResponse.statusCode;
             body = functionResponse.body;
             extraInfo = functionResponse.headers[HEADER_EXTRA_INFO];
