@@ -3,5 +3,5 @@ cat << EOF
 ---
 addons: []
 default_process_types:
-  web: java -jar $APP_DIR/proxy/target/proxy-0.0.1.jar com.salesforce.functions.proxy.ProxyApplication
+  web: java -jar $HOME/proxy/target/proxy-0.0.1.jar com.salesforce.functions.proxy.ProxyApplication
 EOF
