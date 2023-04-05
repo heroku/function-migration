@@ -339,7 +339,7 @@ class BaseRequestHandler {
      * @param requestProvidedAccessToken
      * @returns {Promise<void>}
      */
-    async validateCaller(requestId, instanceUrl, requestProvidedAccessToken) {
+    async validateClient(requestId, instanceUrl, requestProvidedAccessToken) {
         const url = `${instanceUrl}/services/oauth2/userinfo`;
         const opts = {
             method: 'GET',
@@ -373,7 +373,7 @@ class BaseRequestHandler {
         const {requestId, requestProvidedAccessToken, sfFnContext, sfContext} = this.parseAndValidateHeaders(this.request.headers);
 
         // Validate that the context's orgId matches the accessToken
-        await this.validateCaller(requestId, sfContext.userContext.salesforceBaseUrl, requestProvidedAccessToken);
+        await this.validateClient(requestId, sfContext.userContext.salesforceBaseUrl, requestProvidedAccessToken);
 
         return {requestId, requestProvidedAccessToken, sfFnContext, sfContext};
     }
@@ -639,7 +639,7 @@ export class AsyncRequestHandler extends BaseRequestHandler {
         if (!response || response.statusCode !== 204) {
             this.logger.error(`Unable to save function response to AsyncFunctionInvocationRequest__c [${functionInvocationId}]: ${JSON.stringify(response.errors.join(','))}`);
         } else {
-            this.logger.info(`Save function response [${statusCode}] to AsyncFunctionInvocationRequest__c [${functionInvocationId}]`);
+            this.logger.info(`Updated function response [${statusCode}] to AsyncFunctionInvocationRequest__c [${functionInvocationId}]`);
         }
     }
 

@@ -166,11 +166,6 @@ global class FunctionInvocationRequest {
         private String orgDomainUrl;
         private String namespace;
 
-        public UserContextBuilder apiVersion(String apiVersion) {
-            this.apiVersion = apiVersion;
-            return this;
-        }
-
         public UserContextBuilder orgId(String orgId) {
             this.orgId = orgId;
             return this;
@@ -251,23 +246,22 @@ global class FunctionInvocationRequest {
     }
 
     public SalesforceContext sfContext;
-    public FunctionContext functionContext;
+    public FunctionContext sfFnContext;
 
     private FunctionInvocationRequest() {}
 
     public FunctionInvocationRequest(FunctionInvocationRequestBuilder builder) {
-        this.functionContext = builder.functionContext;
+        this.sfFnContext = builder.sfFnContext;
         this.sfContext = new SalesforceContext(builder.apiVersion, '0.1', builder.userContext);
     }
     
     public void setContextHeaders(HttpRequest functionRequest) {
         functionRequest.setHeader('ce-specversion', '1.0');
-        functionRequest.setHeader('ce-id', functionContext.id);
-        functionRequest.setHeader('ce-source', functionContext.source);
+        functionRequest.setHeader('ce-id', sfFnContext.id);
+        functionRequest.setHeader('ce-source', sfFnContext.source);
         functionRequest.setHeader('ce-datacontenttype', 'application/json');
-        functionRequest.setHeader('ce-type', functionContext.type);
-        functionRequest.setHeader('ce-time', functionContext.requestTime);
-        functionRequest.setHeader('ce-sffncontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(functionContext))));
+        functionRequest.setHeader('ce-type', sfFnContext.type);
+        functionRequest.setHeader('ce-sffncontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(sfFnContext))));
         functionRequest.setHeader('ce-sfcontext', EncodingUtil.Base64Encode(Blob.valueOf(JSON.serialize(sfContext))));
     }
 
@@ -282,7 +276,7 @@ global class FunctionInvocationRequest {
     public class FunctionInvocationRequestBuilder {
 
         private String apiVersion;
-        private Context context;
+        private FunctionContext sfFnContext;
         private UserContext userContext;
 
         public FunctionInvocationRequestBuilder apiVersion(String apiVersion) {
@@ -290,8 +284,8 @@ global class FunctionInvocationRequest {
             return this;
         }
 
-        public FunctionInvocationRequestBuilder context(Context context) {
-            this.context = context;
+        public FunctionInvocationRequestBuilder context(FunctionContext sfFnContext) {
+            this.sfFnContext = sfFnContext;
             return this;
         }
 
@@ -304,7 +298,7 @@ global class FunctionInvocationRequest {
             if (null == apiVersion) {
                 throw new IllegalStateException('API Version is required');
             }
-            if (null == context) {
+            if (null == sfFnContext) {
                 throw new IllegalStateException('Context is required');
             }
             if (null == userContext) {

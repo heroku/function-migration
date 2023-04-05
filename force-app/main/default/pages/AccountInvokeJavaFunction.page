@@ -1,0 +1,5 @@
+<apex:page standardController="Account" recordSetVar="Accounts" extensions="InvokeJavaFunction" action="{!invokeSyncFromButton}">
+<script>
+    window.history.back();
+</script>
+</apex:page>

@@ -44,7 +44,7 @@ global class Function {
     global static Function get(String namespace, String projectFunctionRef) {
         FunctionReference__mdt functionReference = null;
         try {
-            functionReference = [SELECT Endpoint__c, PermissionSetOrGroup__c FROM FunctionReference__mdt WHERE DeveloperName = :projectFunctionRef AND NamespacePrefix = :namespace];
+            functionReference = [SELECT APIVersion__c, ConsumerId__c, Certificate__c, Endpoint__c, PermissionSetOrGroup__c FROM FunctionReference__mdt WHERE DeveloperName = :projectFunctionRef AND NamespacePrefix = :namespace];
         } catch (Exception ex) {
             System.debug('Unable to retrieve FunctionReference__mdt for ' + namespace + '__' + projectFunctionRef + ': ' + ex.getMessage());
         }       
@@ -67,7 +67,9 @@ global class Function {
                 throw new InvalidFunctionException('Unable to validate PermissionSetAssignment for user ' + UserInfo.getUserName() + ' and PermissionSetOrGroup \'' + functionReference.PermissionSetOrGroup__c + '\': '+ ex.getMessage());
             }
             
-            if (null == assignments || assignments.size() == 0 || assignments.get(1).PermissionSet.HasActivationRequired == false) {
+            if (null == assignments 
+                || assignments.size() == 0 
+                || assignments.get(0).PermissionSet.HasActivationRequired == false) {
                 throw new InvalidFunctionException('PermissionSetOrGroup \'' + functionReference.PermissionSetOrGroup__c + '\' not found or user ' + UserInfo.getUserName() + ' is not assigned or PermissionSetOrGroup is not session-based.');
             }            
         }
@@ -77,23 +79,15 @@ global class Function {
 
     /**
      * Synchronously invoke function.
-     */
+     */    
     global FunctionInvocation invoke(String payloadJson) {
-        return invoke(payloadJson, new List<String>());
-    }
-    
-    /**
-     * Synchronously invoke function activating given session-based Permission Sets defining function org access.
-     */
-    global FunctionInvocation invoke(String payloadJson, List<String> sessionBasedPermSets) {
-        return invoke(new FunctionsMetadataAuthProvider(functionReference), payloadJson, sessionBasedPermSets);
+        return invoke(payloadJson, new FunctionsMetadataAuthProvider(functionReference));
     }
 
     /**
-     * Synchronously invoke function generating a token with given FunctionsAuthProvider and activating given 
-     * session-based Permission Sets that define function's org access.
+     * Synchronously invoke function generating a token with given FunctionsAuthProvider.
      */
-    global FunctionInvocation invoke(FunctionsAuthProvider authProvider, String payloadJson, List<String> sessionBasedPermSets) {
+    global FunctionInvocation invoke(String payloadJson, FunctionsAuthProvider authProvider) {
         String accessToken = authProvider.generateToken();
         if (null == accessToken) {
             throw new InvalidFunctionInvocationException('AccessToken not provided');
@@ -102,6 +96,10 @@ global class Function {
         String requestTime = Datetime.now().format('yyyy-MM-dd\'T\'HH:mm:ss.SSSZ');
         String requestId = generateRequestId(requestTime);
         String resource = functionReference.Endpoint__c + '/sync';
+        List<String> sessionBasedPermSets = new List<String>();
+        if (null != functionReference.PermissionSetOrGroup__c) {
+            sessionBasedPermSets.add(functionReference.PermissionSetOrGroup__c);
+        }
         FunctionInvocationRequest functionRequestContext = generateContext(requestId,
                                                                            functionReference.APIVersion__c,
                                                                            SYNC_TYPE, 
@@ -160,27 +158,16 @@ global class Function {
     /**
      * Asynchronously invoke function.
      */
-    global FunctionInvocation invoke(String payloadJson, FunctionCallback callback) {
-        return invoke(payloadJson, new List<String>(), callback);
-    }
-    
-    /**
-     * Asynchronously invoke function activating given session-based Permission Sets that define function's org access.
-     */
-    global FunctionInvocation invoke(String payloadjson, 
-                                     List<String> sessionBasedPermSets, 
-                                     FunctionCallback callback) {
-        return invoke(new FunctionsMetadataAuthProvider(functionReference), payloadJson, sessionBasedPermSets, callback);
+    global FunctionInvocation invoke(String payloadjson, FunctionCallback callback) {
+        return invoke(payloadJson, callback, new FunctionsMetadataAuthProvider(functionReference));
     }
 
     /**
-     * Asynchronously invoke function generating a token with given FunctionsAuthProvider and activating given 
-     * session-based Permission Sets that define function's org access.
+     * Asynchronously invoke function generating a token with given FunctionsAuthProvider.
      */
-    global FunctionInvocation invoke(FunctionsAuthProvider authProvider, 
-                                     String payloadJson, 
-                                     List<String> sessionBasedPermSets, 
-                                     FunctionCallback callback) {
+    global FunctionInvocation invoke(String payloadJson,                                      
+                                     FunctionCallback callback,
+                                     FunctionsAuthProvider authProvider) {
         if (null == authProvider) {
             throw new InvalidFunctionInvocationException('FunctionsAuthProvider not provided');
         }
@@ -203,9 +190,9 @@ global class Function {
         }
         System.debug('Saving CallbackType__c: ' + callbackType);
         AsyncFunctionInvocationRequest__c asyncFIR = new AsyncFunctionInvocationRequest__c(
-            Request__c = payloadjson,
             Callback__c = JSON.serialize(callback),
-            CallbackType__c = callbackType
+            CallbackType__c = callbackType,
+            Request__c = payloadjson
         );
         insert asyncFIR;
 
@@ -213,6 +200,10 @@ global class Function {
         String resource = functionReference.Endpoint__c + '/async';
         String requestTime = Datetime.now().format('yyyy-MM-dd\'T\'HH:mm:ss.SSSZ');
         String requestId = generateRequestId(asyncFIR.Id, requestTime);
+        List<String> sessionBasedPermSets = new List<String>();
+        if (null != functionReference.PermissionSetOrGroup__c) {
+            sessionBasedPermSets.add(functionReference.PermissionSetOrGroup__c);
+        }
         FunctionInvocationRequest functionInvocationRequest = generateContext(requestId, 
                                                                               functionReference.APIVersion__c,
                                                                               ASYNC_TYPE, 
@@ -272,11 +263,11 @@ global class Function {
         String instanceName = [SELECT InstanceName FROM Organization LIMIT 1].InstanceName;
         return new FunctionInvocationRequest.FunctionInvocationRequestBuilder()
             .apiVersion(apiVersion)
-            .context(new FunctionInvocationRequest.ContextBuilder()
+            .context(new FunctionInvocationRequest.FunctionContextBuilder()
                 .id(requestId)
                 .function(projectFunctionRef)
                 .resource(resource)
-                 // TODO: If desired, include calling class's Id (obtain via new DmlException() r)
+                 // TODO: If desired, include calling class's Id (obtain via new DmlException(), eg)
                 .source('urn:event:from:salesforce/' + instanceName + '/' + System.UserInfo.getOrganizationId() + '/apex')
                 .type(type)
                 .requestTime(requestTime)                

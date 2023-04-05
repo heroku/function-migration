@@ -13,8 +13,8 @@ global class FunctionInvocationImpl implements FunctionInvocation {
             String status,
             String errorMessage,
             Integer statusCode,
-    		String extraInfoEncodedJson) {
-        this(requestId, response, status, errorMessage, statusCode, null, extraInfoEncodedJson);
+    		String extraInfoJson) {
+        this(requestId, response, status, errorMessage, statusCode, null, extraInfoJson);
     }
 
     public FunctionInvocationImpl(
@@ -24,14 +24,14 @@ global class FunctionInvocationImpl implements FunctionInvocation {
             String errorMessage,
             Integer statusCode,
             String asyncFunctionInvocationRequestId,
-            String extraInfoEncodedJson) {
+            String extraInfoJson) {
         this.requestId = requestId;
         this.response = response;
         this.status = parseStatus(status);
         this.error = errorMessage == null ? null : new FunctionInvocationErrorImpl(errorMessage, parseErrorType(statusCode));
         this.asyncFunctionInvocationRequestId = asyncFunctionInvocationRequestId;
         try {
-            this.extraInfoMap = (Map<String,Object>)JSON.deserializeUntyped(String.valueOf(EncodingUtil.Base64Decode(extraInfoEncodedJson)));
+            this.extraInfoMap = (Map<String,Object>)JSON.deserializeUntyped(String.valueOf(EncodingUtil.Base64Decode(extraInfoJson)));
         } catch(Exception ex) {
             System.debug('Unable to parse ExtraInfo: ' + ex.getMessage());
             this.extraInfoMap = new Map<String,Object>();

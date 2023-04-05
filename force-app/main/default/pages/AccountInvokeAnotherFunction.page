@@ -1,5 +1,0 @@
-<apex:page standardController="Account" recordSetVar="Accounts" extensions="InvokeAnotherFunction" action="{!invokeFromButton}">
-<script>
-    window.history.back();
-</script>
-</apex:page>

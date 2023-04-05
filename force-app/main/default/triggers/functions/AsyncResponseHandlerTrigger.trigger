@@ -11,7 +11,7 @@ trigger AsyncResponseHandlerTrigger on AsyncFunctionInvocationRequest__c (after 
             continue;
         }    
 
-        System.debug('Processing callback for request ' + afir.RequestId__c + ', AsyncFunctionInvocationRequest__c ' + afir.Id);
+        System.debug('Processing callback for async request ' + afir.RequestId__c + ', AsyncFunctionInvocationRequest__c ' + afir.Id + ', statusCode ' + afir.StatusCode__c);
         FunctionInvocationImpl invocation = new FunctionInvocationImpl(afir.RequestId__c, 
                                                                        afir.Response__c,
                                                                        afir.Status__c,

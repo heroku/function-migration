@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Typescript Function</label>
+    <protected>false</protected>
+    <values>
+        <field>Endpoint__c</field>
+        <value xsi:type="xsd:string">http://localhost:3000</value>
+    </values>
+    <values>
+        <field>PermissionSetOrGroup__c</field>
+        <value xsi:type="xsd:string">TypescriptFunction</value>
+    </values>
+    <values>
+        <field>ConsumerId__c</field>
+        <value xsi:type="xsd:string">3MVG9AOp4kbriZOKr0ySjr6jBQ2ZkU.HLB9pTonhvK3AOUGmXH6ud3DUyq4Msqkte8bWrx7nc0gjmM9iiRPpe</value>
+    </values>
+    <values>
+        <field>Certificate__c</field>
+        <value xsi:type="xsd:string">Functions_Internal_Cert</value>
+    </values>
+</CustomMetadata>
