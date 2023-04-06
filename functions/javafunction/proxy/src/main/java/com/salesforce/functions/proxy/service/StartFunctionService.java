@@ -1,9 +1,8 @@
-package com.salesforce.functions.proxy.command;
+package com.salesforce.functions.proxy.service;
 
 import com.google.common.collect.Lists;
 import com.salesforce.functions.proxy.config.ProxyConfig;
 import com.salesforce.functions.proxy.util.Utils;
-import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -12,12 +11,11 @@ import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Component
-public class StartFunction implements InitializingBean {
+public class StartFunctionService implements InitializingBean {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StartFunction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StartFunctionService.class);
 
     @Autowired
     private ProxyConfig proxyConfig;
@@ -27,6 +25,10 @@ public class StartFunction implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        start();
+    }
+
+    public void start() throws Exception {
         List<String> functionStartCmd = assembleFunctionStartCommand();
         LOGGER.info("Starting function w/ args: " + String.join(" ", functionStartCmd));
         Process functionProcess = null;

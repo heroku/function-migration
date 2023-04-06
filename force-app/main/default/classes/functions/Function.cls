@@ -157,7 +157,7 @@ global class Function {
             System.debug('FAILURE: Sync invocation request for function ' + getFunctionName() + ' [' + statusCode + ']: ' +
                 body + ' [' + requestId + ']');
         } else {
-            System.debug('Successfully sent async invocation request for function ' + getFunctionName() + ' [' + requestId + ']');
+            System.debug('Successfully invoked sync request for function ' + getFunctionName() + ' [' + requestId + ']');
         }
 
         // TODO: Review status and error values/fields

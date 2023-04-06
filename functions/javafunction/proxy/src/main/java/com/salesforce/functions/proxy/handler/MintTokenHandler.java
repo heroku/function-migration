@@ -59,7 +59,6 @@ public class MintTokenHandler extends BaseHandler {
         String issuer = proxyConfig.getConsumerKey();
         String audience = !utils.isBlank(proxyConfig.getAudience())
                 ? proxyConfig.getAudience() : (isTest ? SANDBOX_AUDIENCE_URL : PROD_AUDIENCE_URL);
-        utils.info(LOGGER, requestId, "Audience for token minting: " + audience);
 
         ResponseEntity<OauthExchangeResponse> responseEntity = null;
         try {
@@ -79,6 +78,9 @@ public class MintTokenHandler extends BaseHandler {
             formDataMap.add("assertion", signedJWT);
 
             // Assemble POST form request
+            utils.info(LOGGER, requestId, "Minting function " + (isTest ? "test " : " ") + "token for user " +
+                    userContext.getUsername() + ", audience " + audience + ", url " + url + ", issuer " +
+                    issuer.substring(0, 5) + "...");
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
             headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + functionRequestContext.getRequestProvidedAccessToken());

@@ -126,10 +126,9 @@ public class InvokeFunctionService {
      * @param body
      * @return
      */
-    public ResponseEntity invokeFunction(FunctionRequestContext functionRequestContext, String body) {
+    public ResponseEntity invokeFunction(FunctionRequestContext functionRequestContext, String body) throws Exception {
         String requestId = functionRequestContext.getRequestId();
-        SfFnContext sfFnContext = functionRequestContext.getSfFnContext();
-        utils.info(LOGGER, requestId,"Invoking function " + sfFnContext.getFunctionName() + "...");
+        utils.info(LOGGER, requestId,"Invoking function " + proxyConfig.getFunctionUrl() + "...");
 
         // Forward request to the function
         HttpEntity<String> entity = new HttpEntity<>(body, functionRequestContext.getHeaders());
@@ -137,16 +136,11 @@ public class InvokeFunctionService {
         long startMs = System.currentTimeMillis();
         try {
             responseEntity = restTemplate.exchange(proxyConfig.getFunctionUrl(),
-                    functionRequestContext.getMethod(),
-                    entity,
-                    String.class);
-        } catch (HttpClientErrorException ex) {
-            return ResponseEntity
-                    .status(ex.getStatusCode())
-                    .headers(ex.getResponseHeaders())
-                    .body(ex.getResponseBodyAsString());
+                                                   functionRequestContext.getMethod(),
+                                                   entity,
+                                                   String.class);
         } finally {
-            utils.info(LOGGER, requestId,"Invoked function " + sfFnContext.getFunctionName() + " in " +
+            utils.info(LOGGER, requestId,"Invoked function " + proxyConfig.getFunctionUrl() + " in " +
                     (System.currentTimeMillis() - startMs) + "ms");
         }
 
