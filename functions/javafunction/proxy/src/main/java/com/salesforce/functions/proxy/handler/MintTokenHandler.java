@@ -54,10 +54,12 @@ public class MintTokenHandler extends BaseHandler {
         String requestId = functionRequestContext.getRequestId();
         SfContext.UserContext userContext = functionRequestContext.getSfContext().getUserContext();
         String url = userContext.getSalesforceBaseUrl() + "/services/oauth2/token";
-        boolean isTest = url.contains(".sandbox.") || url.contains("c.scratch.vf.force.com");
+        boolean isTest = url.contains(".sandbox.") || url.contains(".scratch.");
 
         String issuer = proxyConfig.getConsumerKey();
-        String audience = proxyConfig.getAudience();
+        String audience = !utils.isBlank(proxyConfig.getAudience())
+                ? proxyConfig.getAudience() : (isTest ? SANDBOX_AUDIENCE_URL : PROD_AUDIENCE_URL);
+        utils.info(LOGGER, requestId, "Audience for token minting: " + audience);
 
         ResponseEntity<OauthExchangeResponse> responseEntity = null;
         try {
@@ -66,7 +68,7 @@ public class MintTokenHandler extends BaseHandler {
             String signedJWT = Jwts.builder()
                     .setIssuer(issuer)
                     .setSubject(userContext.getUsername())
-                    .setAudience(audience != null ? audience : (isTest ? SANDBOX_AUDIENCE_URL : PROD_AUDIENCE_URL))
+                    .setAudience(audience)
                     .setExpiration(new Date((new Date()).getTime() + 360))
                     .signWith(signedKey, SignatureAlgorithm.RS256)
                     .compact();
@@ -96,7 +98,7 @@ public class MintTokenHandler extends BaseHandler {
 
         OauthExchangeResponse oauthExchangeResponse = responseEntity.getBody();
 
-        // {"error":"invalid_grant","error_description":"invalid assertion"}
+        // Eg, {"error":"invalid_grant","error_description":"invalid assertion"}
         if (!utils.isBlank(oauthExchangeResponse.getError())) {
             String msg = oauthExchangeResponse.getError() +
                     (!utils.isBlank(oauthExchangeResponse.getError_description())

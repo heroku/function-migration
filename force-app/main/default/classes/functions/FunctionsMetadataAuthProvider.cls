@@ -42,7 +42,6 @@ public class FunctionsMetadataAuthProvider implements FunctionsAuthProvider {
         if (org.IsSandbox) {
             audience = 'https://test.salesforce.com';
         }
-        audience = 'https://cwall-wsl5:6101';
         
 		Auth.JWT jwt = new Auth.JWT();
 		jwt.setSub(username);

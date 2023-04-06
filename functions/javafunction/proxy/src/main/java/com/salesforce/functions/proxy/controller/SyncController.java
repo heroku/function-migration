@@ -56,13 +56,15 @@ public class SyncController {
 
                 utils.debug(LOGGER,
                             functionRequestContext.getRequestId(),
-                            "Invoke handler " + handlerName + " in " + (System.currentTimeMillis() - startMs) + "ms");
+                            "Invoked handler " + handlerName + " in " + (System.currentTimeMillis() - startMs) + "ms");
             }
         } catch (InvalidRequestException ex) {
+            utils.error(LOGGER, functionRequestContext.getRequestId(), ex.getMessage());
             return ResponseEntity
                     .status(ex.getStatusCode())
                     .body(ex.getMessage());
         } catch (Exception ex) {
+            utils.error(LOGGER, functionRequestContext.getRequestId(), ex.getMessage());
             return ResponseEntity
                     .status(503)
                     .body(ex.getMessage());

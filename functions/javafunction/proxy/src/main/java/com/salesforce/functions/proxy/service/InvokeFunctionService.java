@@ -39,6 +39,13 @@ public class InvokeFunctionService {
     @Autowired
     Utils utils;
 
+    /**
+     * Invoke function synchronously.
+     *
+     * @param functionRequestContext
+     * @param body
+     * @return
+     */
     public ResponseEntity syncInvokeFunction(FunctionRequestContext functionRequestContext, String body) {
         String requestId = functionRequestContext.getRequestId();
         SfFnContext sfFnContext = functionRequestContext.getSfFnContext();
@@ -59,13 +66,19 @@ public class InvokeFunctionService {
                     .headers(ex.getResponseHeaders())
                     .body(ex.getResponseBodyAsString());
         } finally {
-            utils.info(LOGGER, requestId,"Invoke function " + sfFnContext.getFunctionName() + " in " +
+            utils.info(LOGGER, requestId,"Invoked function " + sfFnContext.getFunctionName() + " in " +
                     (System.currentTimeMillis() - startMs) + "ms");
         }
 
         return responseEntity;
     }
 
+    /**
+     * Invoke function asynchronously.
+     *
+     * @param functionRequestContext
+     * @param body
+     */
     @Async
     public void asyncInvokeFunction(FunctionRequestContext functionRequestContext, String body) {
         String requestId = functionRequestContext.getRequestId();
@@ -79,9 +92,9 @@ public class InvokeFunctionService {
         try {
             future = CompletableFuture.completedFuture(
                     restTemplate.exchange(proxyConfig.getFunctionUrl(),
-                            HttpMethod.POST,
-                            entity,
-                            String.class));
+                                          HttpMethod.POST,
+                                          entity,
+                                          String.class));
         } catch (HttpClientErrorException ex) {
             AsyncFunctionInvocationRequest asyncFunctionInvocationRequest =
                     new AsyncFunctionInvocationRequest(ex.getResponseHeaders().getFirst(HEADER_EXTRA_INFO),
@@ -101,10 +114,47 @@ public class InvokeFunctionService {
         } catch (Exception ex) {
             utils.error(LOGGER, requestId,"Unable to save async function response: " + ex.getMessage());
         } finally {
-            utils.info(LOGGER, requestId,"Invoke function " + sfFnContext.getFunctionName() + " in " +
+            utils.info(LOGGER, requestId,"Invoked function " + sfFnContext.getFunctionName() + " in " +
                     (System.currentTimeMillis() - startMs) + "ms");
         }
     }
+
+    /**
+     * Generic function invocation.
+     *
+     * @param functionRequestContext
+     * @param body
+     * @return
+     */
+    public ResponseEntity invokeFunction(FunctionRequestContext functionRequestContext, String body) {
+        String requestId = functionRequestContext.getRequestId();
+        SfFnContext sfFnContext = functionRequestContext.getSfFnContext();
+        utils.info(LOGGER, requestId,"Invoking function " + sfFnContext.getFunctionName() + "...");
+
+        // Forward request to the function
+        HttpEntity<String> entity = new HttpEntity<>(body, functionRequestContext.getHeaders());
+        ResponseEntity<String> responseEntity;
+        long startMs = System.currentTimeMillis();
+        try {
+            responseEntity = restTemplate.exchange(proxyConfig.getFunctionUrl(),
+                    functionRequestContext.getMethod(),
+                    entity,
+                    String.class);
+        } catch (HttpClientErrorException ex) {
+            return ResponseEntity
+                    .status(ex.getStatusCode())
+                    .headers(ex.getResponseHeaders())
+                    .body(ex.getResponseBodyAsString());
+        } finally {
+            utils.info(LOGGER, requestId,"Invoked function " + sfFnContext.getFunctionName() + " in " +
+                    (System.currentTimeMillis() - startMs) + "ms");
+        }
+
+        return responseEntity;
+    }
+
+
+    //   P R I V A T E
 
     private void handleFunctionResponse(FunctionRequestContext functionRequestContext,
                                         ResponseEntity<String> functionResponseEntity) {

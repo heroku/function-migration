@@ -7,6 +7,7 @@ public class Constants {
     public static final String HEADER_FUNCTION_REQUEST_CONTEXT = "ce-sffncontext";
     public static final String HEADER_SALESFORCE_CONTEXT = "ce-sfcontext";
     public static final String HEADER_EXTRA_INFO = "x-extra-info";
+    public static final String HEADER_HEALTH_CHECK = "x-health-check";
     
     // Function
     public static final String FUNCTION_INVOCATION_TYPE_SYNC = "com.salesforce.function.invoke.sync";

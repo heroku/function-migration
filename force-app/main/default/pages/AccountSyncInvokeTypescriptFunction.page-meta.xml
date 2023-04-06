@@ -3,5 +3,5 @@
     <apiVersion>57.0</apiVersion>
     <availableInTouch>false</availableInTouch>
     <confirmationTokenRequired>false</confirmationTokenRequired>
-    <label>AccountInvokeJavaFunction</label>
+    <label>AccountSyncInvokeTypescriptFunction</label>
 </ApexPage>

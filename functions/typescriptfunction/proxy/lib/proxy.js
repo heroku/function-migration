@@ -393,7 +393,7 @@ class BaseRequestHandler {
      */
     async mintToken(requestId, sfFnContext, sfContext) {
         const url = `${sfContext.userContext.salesforceBaseUrl}/services/oauth2/token`;
-        const isTest = (url.includes('.sandbox.') || url.includes('c.scratch.vf.force.com'));
+        const isTest = (url.includes('.sandbox.') || url.includes('.scratch.'));
 
         const jwtOpts = {
             issuer: config.clientId,
@@ -744,6 +744,7 @@ export class ProxyServer {
             upstream: config.functionUrl,
             prefix: '/healthcheck',
             preHandler: async (request, reply) => {
+                // TODO: Validate caller
                 request.log.info('Handling function health check request');
                 request.headers['x-health-check'] = 'true';
             }

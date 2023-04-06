@@ -18,19 +18,29 @@ public class InvokeTypescriptFunction {
     
     // Invoke function
     public static void invokeAsync() {
-        Function typescriptfunction = Function.get('sfhxhello_typescriptfunction');
+        // Determine namespace
+        ApexClass thisCls = [ SELECT NamespacePrefix FROM ApexClass WHERE Name = 'InvokeTypescriptFunction' ];
+        
+        // Get reference to function
+        Function typescriptFunction = Function.get(thisCls.NamespacePrefix, 'sfhxhello_typescriptfunction');
         Map<String,String> params = new Map<String,String>();
+        
         // Async
-        FunctionInvocation invocation = typescriptfunction.invoke(JSON.serialize(params), new Callback(FUNCTION_NAME));
+        FunctionInvocation invocation = typescriptFunction.invoke(JSON.serialize(params), new Callback(FUNCTION_NAME));
         System.debug(invocation.getStatus().name() + '...');
     }
 
     // Invoke function
     public static void invokeSync() {
-        Function typescriptfunction = Function.get('sfhxhello_typescriptfunction');
+        // Determine namespace
+        ApexClass thisCls = [ SELECT NamespacePrefix FROM ApexClass WHERE Name = 'InvokeTypescriptFunction' ];
+        
+        // Get reference to function
+        Function typescriptFunction = Function.get(thisCls.NamespacePrefix, 'sfhxhello_typescriptfunction');
         Map<String,String> params = new Map<String,String>();
+
         // Sync
-        FunctionInvocation invocation = typescriptfunction.invoke(JSON.serialize(params));
+        FunctionInvocation invocation = typescriptFunction.invoke(JSON.serialize(params));
         
         // Handle response
         String logMe = invocation.getStatus().name() + ': ' + invocation.getResponse();

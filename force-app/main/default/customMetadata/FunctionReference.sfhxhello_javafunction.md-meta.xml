@@ -4,7 +4,7 @@
     <protected>false</protected>
     <values>
         <field>Endpoint__c</field>
-        <value xsi:type="xsd:string">http://localhost:3000</value>
+        <value xsi:type="xsd:string">https://javafunction.herokuapp.com</value>
     </values>
     <values>
         <field>PermissionSetOrGroup__c</field>
@@ -12,7 +12,7 @@
     </values>
     <values>
         <field>ConsumerId__c</field>
-        <value xsi:type="xsd:string">3MVG9AOp4kbriZOKr0ySjr6jBQ2ZkU.HLB9pTonhvK3AOUGmXH6ud3DUyq4Msqkte8bWrx7nc0gjmM9iiRPpe</value>
+        <value xsi:type="xsd:string">3MVG9SemV5D80oBdcSNlEOgoU_d22jC3s7.ZpDEQU5tssm4CflTI0dsy0AtAdwIJId3h862i3YRduAiJZp1np</value>
     </values>
     <values>
         <field>Certificate__c</field>

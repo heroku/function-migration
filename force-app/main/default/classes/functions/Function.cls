@@ -6,6 +6,7 @@ global class Function {
     
     final static String SYNC_TYPE = 'com.salesforce.function.invoke.sync';
     final static String ASYNC_TYPE = 'com.salesforce.function.invoke.async';
+    final static String[] FUNCTION_REFERENCE_FIELDS = new String[] { 'APIVersion__c', 'ConsumerId__c', 'Certificate__c', 'Endpoint__c', 'PermissionSetOrGroup__c' };
 
     final String namespace;
     final String projectFunctionRef; // <project>_<function>
@@ -42,16 +43,30 @@ global class Function {
      * null namespace designates applying parent component's namespace for FunctionReference lookup.
      */
     global static Function get(String namespace, String projectFunctionRef) {
+        String fullyQualifiedFunctionName = (String.isNotBlank(namespace) ? namespace + '.' : '')  + projectFunctionRef;
+        
+        // Query for FunctionReference_mdt record
+        String functionReferenceCustomMetadataName = (String.isNotBlank(namespace) ? namespace + '__' : '')  + 'FunctionReference__mdt';
+        List<String> functionReferenceFields = new List<String>(FUNCTION_REFERENCE_FIELDS);
+        if (String.isNotBlank(namespace)) {
+            functionReferenceFields.clear();
+            for (String functionReferenceField : FUNCTION_REFERENCE_FIELDS) {
+                functionReferenceFields.add(namespace + '__' + functionReferenceField);
+            }
+        }
+        String functionReferenceSoql = 'SELECT ' + String.join(functionReferenceFields, ', ' ) + ' FROM ' + functionReferenceCustomMetadataName + ' WHERE DeveloperName = \'' + projectFunctionRef + '\' AND NamespacePrefix = \'' + namespace + '\'';
+        System.debug(functionReferenceSoql);
+
         FunctionReference__mdt functionReference = null;
         try {
-            functionReference = [SELECT APIVersion__c, ConsumerId__c, Certificate__c, Endpoint__c, PermissionSetOrGroup__c FROM FunctionReference__mdt WHERE DeveloperName = :projectFunctionRef AND NamespacePrefix = :namespace];
+            functionReference = Database.query(functionReferenceSoql);
         } catch (Exception ex) {
-            System.debug('Unable to retrieve FunctionReference__mdt for ' + namespace + '__' + projectFunctionRef + ': ' + ex.getMessage());
+            System.debug('Unable to retrieve FunctionReference__mdt for ' + fullyQualifiedFunctionName + ': ' + ex.getMessage());
         }       
         
         // Ensure exists and has endpoint
         if (null == functionReference || null == functionReference.Endpoint__c) {
-            throw new InvalidFunctionException('Invalid function: ' + projectFunctionRef);
+            throw new InvalidFunctionException('Invalid function: ' + fullyQualifiedFunctionName);
         }
         
         // If provided, ensure that:

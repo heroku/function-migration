@@ -21,12 +21,11 @@ public class ProxyApplication {
 	public RestTemplate getRestTemplate() {
 		return new RestTemplate();
 	}
+
 	@Bean
 	public Executor asyncExecutor() {
 		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-		executor.setCorePoolSize(2);
-		executor.setMaxPoolSize(10);
-		executor.setQueueCapacity(500);
+		// If needed, configure CorePoolSize, MaxPoolSize, QueueCapacity, etc.
 		executor.setThreadNamePrefix("AsyncFunctionInvoker-");
 		executor.initialize();
 		return executor;
