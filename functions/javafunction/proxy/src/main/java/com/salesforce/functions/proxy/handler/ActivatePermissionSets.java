@@ -99,6 +99,6 @@ public class ActivatePermissionSets extends BaseHandler {
         }
 
         utils.info(LOGGER, requestId, "Activated session-based Permission Set(s): " +
-                String.join(",", permissionSets) + " - yes");
+                String.join(",", permissionSets) + " - yessir");
     }
 }

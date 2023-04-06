@@ -130,7 +130,7 @@ global class Function {
                                                                accessToken);
         functionRequest.setTimeout(120000);
         
-        FunctionInvocationStatus status = FunctionInvocationStatus.SUCCESS;
+        FunctionInvocationStatus status;
         Integer statusCode = 0;
         String body = '';
         String error = '';
@@ -141,6 +141,7 @@ global class Function {
             Http httpConn = new Http();
             HttpResponse functionResponse = httpConn.send(functionRequest);
             statusCode = functionResponse.getStatusCode();
+            status = statusCode < 200 || statusCode > 299 ? FunctionInvocationStatus.ERROR : FunctionInvocationStatus.SUCCESS;
             body = functionResponse.getBody();
             extraInfo = functionResponse.getHeader('x-extra-info');
         } catch(Exception ex) {
