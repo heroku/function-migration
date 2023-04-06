@@ -43,12 +43,14 @@ public class AsyncController {
     public ResponseEntity<String> handleAsyncRequest(@RequestBody(required = false) String body,
                                                      @RequestHeader HttpHeaders headers,
                                                      HttpMethod method) {
+        LOGGER.info("Received /async request");
 
         FunctionRequestContext functionRequestContext = new FunctionRequestContext(headers, method);
         try {
             for (Handler handler : handlers) {
+                String requestId = functionRequestContext.getRequestId();
                 String handlerName = handler.getClass().getSimpleName();
-                LOGGER.debug("Invoking handler " + handlerName + "...");
+                utils.debug(LOGGER, requestId, "Invoking handler " + handlerName + "...");
                 long startMs = System.currentTimeMillis();
 
                 handler.handle(functionRequestContext);

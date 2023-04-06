@@ -57,6 +57,7 @@ public class StartFunctionService implements InitializingBean {
         if (!utils.isBlank(proxyConfig.getDebugPort())) {
             functionStartCmd.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + proxyConfig.getDebugPort());
         }
+        System.getProperty("JAVA_TOOL_OPTIONS");
         functionStartCmd.add("-jar");
         functionStartCmd.add(proxyConfig.getSfFxRuntimeJarFilePath());
         functionStartCmd.add("serve");
