@@ -98,7 +98,7 @@ public class HealthCheckController {
         }
 
         // Give function time to restart
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         utils.info(LOGGER, requestId, "Retrying function /healthcheck...");
         return invokeFunctionService.invokeFunction(functionRequestContext, body);
     }

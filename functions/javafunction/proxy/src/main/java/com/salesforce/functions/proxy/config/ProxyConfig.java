@@ -12,6 +12,7 @@ import javax.validation.constraints.NotBlank;
 @ConfigurationProperties(prefix="proxy")
 public class ProxyConfig {
 
+    private String functionJavaToolOptions;
     @NotBlank
     private String functionHost;
     @NotBlank
@@ -30,6 +31,14 @@ public class ProxyConfig {
     private String sfFxRuntimeJarFilePath;
     @NotBlank
     private String functionDir;
+
+    public String getFunctionJavaToolOptions() {
+        return functionJavaToolOptions;
+    }
+
+    public void setFunctionJavaToolOptions(String functionJavaToolOptions) {
+        this.functionJavaToolOptions = functionJavaToolOptions;
+    }
 
     @NotBlank
     public String getFunctionHost() {

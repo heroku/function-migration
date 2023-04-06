@@ -339,7 +339,7 @@ class BaseRequestHandler {
      * @param requestProvidedAccessToken
      * @returns {Promise<void>}
      */
-    async validateClient(requestId, instanceUrl, requestProvidedAccessToken) {
+    async validateCaller(requestId, instanceUrl, requestProvidedAccessToken) {
         const url = `${instanceUrl}/services/oauth2/userinfo`;
         const opts = {
             method: 'GET',
@@ -354,7 +354,7 @@ class BaseRequestHandler {
         try {
             userInfo = await this.request(url, opts);
         } catch (err) {
-            throwError(`Unable to validate request (/userinfo): ${err.response.body}`, err.response.statusCode);
+            throwError(`Unable to validate request (/userinfo): ${err.message}`, requestId);
         }
 
         if (!userInfo || config.orgId18 !== userInfo.organization_id) {
@@ -373,7 +373,7 @@ class BaseRequestHandler {
         const {requestId, requestProvidedAccessToken, sfFnContext, sfContext} = this.parseAndValidateHeaders(this.request.headers);
 
         // Validate that the context's orgId matches the accessToken
-        await this.validateClient(requestId, sfContext.userContext.salesforceBaseUrl, requestProvidedAccessToken);
+        await this.validateCaller(requestId, sfContext.userContext.salesforceBaseUrl, requestProvidedAccessToken);
 
         return {requestId, requestProvidedAccessToken, sfFnContext, sfContext};
     }
