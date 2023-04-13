@@ -1,0 +1,9 @@
+{
+  "id": "00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-a00xx000000bxi1AAA-MyProject.MyFunction-2020-09-03T20:56:27.608444Z",
+  "apiVersion": "58.0",
+  "functionName": "MyProject.MyFunction",
+  "resource": "https://cwall-wsl5:3000",
+  "source": "urn:event:from:salesforce/xx/00Dxx0000006IYJEA2/apex",
+  "type": "com.salesforce.function.invoke.sync",
+  "permissionSets": [ "Functions" ]
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Java Function</label>
+    <protected>false</protected>
+    <values>
+        <field>Endpoint__c</field>
+        <value xsi:type="xsd:string">https://javafunction.herokuapp.com</value>
+    </values>
+    <values>
+        <field>PermissionSetOrGroup__c</field>
+        <value xsi:type="xsd:string">JavaFunction</value>
+    </values>
+    <values>
+        <field>ConsumerKey__c</field>
+        <value xsi:type="xsd:string">3MVG9SemV5D80oBdcSNlEOgoU_d22jC3s7.ZpDEQU5tssm4CflTI0dsy0AtAdwIJId3h862i3YRduAiJZp1np</value>
+    </values>
+    <values>
+        <field>Certificate__c</field>
+        <value xsi:type="xsd:string">Functions_Internal_Cert</value>
+    </values>
+</CustomMetadata>
