@@ -1,22 +1,24 @@
 # Node Functions
 
 ## [Node Proxy Overview](#overview)
-The Node Proxy is a [Fastify](https://www.fastify.io/) app that has the following routes:
-- `/sync` for synchronous function requests.
-- `/async` for asynchronous function requests.
-- `/healthcheck` to check that health of associated function app.
+The Node Proxy is a [Fastify](https://www.fastify.io/) app that has the following APIs:
+- `/sync` for synchronous function requests, proxies to the function server using [@fastify/http-proxy](https://github.com/fastify/fastify-http-proxy)
+- `/async` for asynchronous function requests, uses the `onResponse` hook to return `200` to the client and then handles proxying the request the function
+- `/healthcheck` to monitor the function server and restart, if needed.
 
-<mark style="background-color: #FFFF00;font-weight:bold">TODO</mark>
+To learn Fastify, check out the [Fastify documentation](https://www.fastify.io/docs/latest/).
 
 ## [Example Function Framework Artifacts](#artifacts)
 Copy the following `bin/` and `proxy/` directories to the root of your function directories.
 
 ```bash
+# Inline buildpack
 functions/typescriptfunction/bin/
 ├── compile
 ├── detect
 └── release
 
+# Proxy app
 functions/typescriptfunction/proxy/
 ├── bin
 ├── config
@@ -30,7 +32,7 @@ functions/typescriptfunction/proxy/
 ```
 
 ## [Function Project Changes](#changes)
-If not already present, add `@heroku/sf-fx-runtime-nodejs` as a production dependency. 
+If not already present, install `@heroku/sf-fx-runtime-nodejs` as a production dependency.
 ```json
 "dependencies": {
     "@heroku/sf-fx-runtime-nodejs": "^0.14.0"
@@ -252,12 +254,15 @@ $ $ heroku logs -a typescriptfunction -t
 
 ## [Local Development](#dev)
 ### Start Proxy and Function
+Starting the proxy will also start the function.
+
+Ensure that the target function (eg, `typescriptfunction`) is installed and built (`npm install && npm run build`).
+
 The following environment variables must be set:
 - `CONSUMER_KEY` - Consumer Key of the function's authorization Connected App.
 - `ENCODED_PRIVATE_KEY` - encoded private key of the function's authorization Connected App.
 - `HOME` - function directory.
 - `ORG_ID_18` - ID of the function owning Organization.
-- `JAVA_TOOL_OPTIONs` - (Optional) set to configuration Java options for the function.
 
 #### Command-line
 ```bash
@@ -267,10 +272,14 @@ $ npm start
 ...
 ```
 
+In addition, the following `npm` scripts are available:
+- `npm run dev`: to start the proxy app in debug mode.
+- `npm run test`: run tests.
+
 #### IDE
 Run `proxy/index.js` or `npm start` via IDE configuration.
 
-### Invocation Scripts
+### Invocation Bash Scripts
 The following scripts invoke local functions sync and asynchronously.
 ```bash
 $ pwd
@@ -288,7 +297,7 @@ $ tree
 ```
 Edit the `.json` files that reflect your Organization and function payload.
 
-Supply an access token provided by
+Supply an access token provided by `sfdx force org display`.
 ```bash
 $ ./invokeSync.sh '00Dxx0000006JX6!AQEA...'
 ...
@@ -297,7 +306,7 @@ $ ./invokeAsync.sh '00Dxx0000006JX6!AQEA...'
 ...
 ```
 
-For async request, use `./queryAsync.sh` to query for last `AsyncFunctionInvocationRequest__c` record:
+For async request, use `./queryAsync.sh` to query for last `AsyncFunctionInvocationRequest__c` record.  Ensure that the invoking user has access to `AsyncFunctionInvocationRequest__c` and fields.
 ```bash
 $ ./queryAsync.sh
 {

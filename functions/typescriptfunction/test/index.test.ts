@@ -64,7 +64,7 @@ describe('Unit Tests', () => {
     expect(mockContext.org.dataApi.query.callCount).to.be.eql(1);
     expect(mockLogger.info.callCount).to.be.eql(2);
     expect(results).to.be.not.undefined;
-    expect(results).has.property('totalSize');
-    expect(results.totalSize).to.be.eql(accounts.totalSize);
+    expect(results).has.property('length');
+    expect(results.length).to.be.eql(accounts.totalSize);
   });
 });

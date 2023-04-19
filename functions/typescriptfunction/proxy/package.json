@@ -1,7 +1,7 @@
 {
   "name": "proxy",
   "version": "0.0.1",
-  "description": "Proxy for Salesforce Functions.",
+  "description": "Proxy for Node Reference Functions Framework",
   "main": "index.js",
   "directories": {
     "lib": "lib",
@@ -10,7 +10,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --inspect index.js"
+    "dev": "node --inspect index.js",
+    "test": "mocha 'test/tests.js'"
   },
   "keywords": [],
   "author": "",
@@ -21,5 +22,10 @@
     "fastify": "^4.14.1",
     "got": "^12.6.0",
     "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "sinon": "^15.0.3"
   }
 }

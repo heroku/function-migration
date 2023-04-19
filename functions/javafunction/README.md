@@ -2,28 +2,29 @@
 
 ## [Java Proxy Overview](#overview)
 
-The Java Proxy is a [Spring Boot](https://spring.io/) app that has the following routes:
+The Java Proxy is a [Spring Boot](https://spring.io/) app that has the following APIs:
 - `/sync` for synchronous function requests.
 - `/async` for asynchronous function requests.
-- `/healthcheck` to check that health of associated function app.
+- `/healthcheck` to monitor the function server and restart, if needed.
 
-<mark style="background-color: #FFFF00;font-weight:bold">TODO</mark>
+To learn Spring Boot, check out the [Sprint Bookt Guides](https://spring.io/guides).
 
 ## [Example Function Framework Artifacts](#artifacts)
 Copy the following `bin/` and `proxy/` directories to the root of your function directories.
 
 ```bash
+# Inline buildpack
 functions/javafunction/bin/
 ├── compile
 ├── detect
 └── release
 
+# Proxy app
 functions/javafunction/proxy/
-├── HELP.md
+├── bin
 ├── mvnw
 ├── mvnw.cmd
 ├── pom.xml
-├── proxy.iml
 ├── README.md
 ├── src
 └── target
@@ -259,19 +260,23 @@ $ heroku logs -a javafunction -t
 2023-04-10T23:10:48.836399+00:00 app[web.1]: 23:10:48.836 DEBUG [RUNTIME] c.s.f.p.controller.SyncController - [8f5d2869-fc78-4aee-8749-de7d57a4c481]: Invoked handler PrepareFunctionRequestHandler in 0ms
 2023-04-10T23:10:48.836584+00:00 app[web.1]: 23:10:48.836 INFO  [RUNTIME] c.s.f.p.s.InvokeFunctionService - [8f5d2869-fc78-4aee-8749-de7d57a4c481]: Async invoking function sfhxhello_javafunction...
 2023-04-10T23:10:49.162923+00:00 app[web.1]: dateTime=2023-04-10T23:10:49.162387Z level=INFO loggerName=com.example.JavafunctionFunction message="Function successfully queried 13 account records!" invocationId=00DB0000000gJmXMAU-4pHpaaleaxhJju-qbvTdk--a00B000000OtzVoIAJ-sffxtest1.sfhxhello_javafunction-2023-04-10T16:10:36.485-0700
-2023-04-10T23:10:49.165325+00:00 app[web.1]: 23:10:49.165 DEBUG [RUNTIME] c.s.f.p.s.InvokeFunctionService - [8f5d2869-fc78-4aee-8749-de7d57a4c481]: POST /sobjects/sffxtest1__AsyncFunctionInvocationRequest__c/a00B000000OtzVoIAJ?_HttpMethod=PATCH: {"sffxtest1__ExtraInfo__c":"{\"requestId\":\"00DB0000000gJmXMAU-4pHpaaleaxhJju-qbvTdk--a00B000000OtzVoIAJ-sffxtest1.sfhxhello_javafunction-2023-04-10T16:10:36.485-0700\",\"source\":\"urn:event:from:salesforce/GS0/00DB0000000gJmXMAU/apex\",\"execTimeMs\":324,\"statusCode\":200,\"isFunctionError\":false,\"stack\":[]}","sffxtest1__Response__c":"{\"accounts\":[{\"id\":\"001B000001U1oCLIAZ\",\"name\":\"TypescriptFunction/async/SUCCESS/00DB0000000gJmXMAU-4pHpPcjoiD_NZpmt-SUG---a00B000000OtzVjIAJ-sffxtest1.sfhxhello_javafunction-2023-04-10T16:07:11.768-0700\"},{...}","sffxtest1__Status__c":"SUCCESS","sffxtest1__StatusCode__c":200}
+2023-04-10T23:10:49.165325+00:00 app[web.1]: 23:10:49.165 DEBUG [RUNTIME] c.s.f.p.s.InvokeFunctionService - [8f5d2869-fc78-4aee-8749-de7d57a4c481]: POST /sobjects/sffxtest1__AsyncFunctionInvocationRequest__c/a00B000000OtzVoIAJ?_HttpMethod=PATCH: {"sffxtest1__ExtraInfo__c":"{\"requestId\":\"00DB0000000gJmXMAU-4pHpaaleaxhJju-qbvTdk--a00B000000OtzVoIAJ-sffxtest1.sfhxhello_javafunction-2023-04-10T16:10:36.485-0700\",\"source\":\"urn:event:from:salesforce/GS0/00DB0000000gJmXMAU/apex\",\"execTimeMs\":324,\"statusCode\":200,\"isFunctionError\":false,\"stack\":[]}","sffxtest1__Response__c":"{\"accounts\":[{\"id\":\"001B000001U1oCLIAZ\",\"name\":\"JavaFunction/async/SUCCESS/00DB0000000gJmXMAU-4pHpPcjoiD_NZpmt-SUG---a00B000000OtzVjIAJ-sffxtest1.sfhxhello_javafunction-2023-04-10T16:07:11.768-0700\"},{...}","sffxtest1__Status__c":"SUCCESS","sffxtest1__StatusCode__c":200}
 2023-04-10T23:10:49.907141+00:00 app[web.1]: 23:10:49.906 INFO  [RUNTIME] c.s.f.p.s.InvokeFunctionService - [8f5d2869-fc78-4aee-8749-de7d57a4c481]: Updated function response [SUCCESS] to AsyncFunctionInvocationRequest__c [a00B000000OtzVoIAJ]
 2023-04-10T23:10:49.907310+00:00 app[web.1]: 23:10:49.907 INFO  [RUNTIME] c.s.f.p.s.InvokeFunctionService - [8f5d2869-fc78-4aee-8749-de7d57a4c481]: Invoked function sfhxhello_javafunction in 1071ms
 ```
 
 ## [Local Development](#dev)
 ### Start Proxy and Function
+Starting the proxy will also start the function.
+
+Ensure that the target function (eg, `javafunction`) is installed and built (`mvn package`).
+
 The following environment variables must be set:
 - `CONSUMER_KEY` - Consumer Key of the function's authorization Connected App.
 - `ENCODED_PRIVATE_KEY` - encoded private key of the function's authorization Connected App.
 - `HOME` - function directory.
 - `ORG_ID_18` - ID of the function owning Organization.
-- `JAVA_TOOL_OPTIONs` - (Optional) set to configuration Java options for the function. 
+- `JAVA_TOOL_OPTIONS` - (Optional) set to configuration Java options for the function. 
 
 #### Command-line
 ```bash
@@ -282,9 +287,11 @@ $ java $JAVA_TOOL_OPTIONS -jar /home/functions/git/function-migration/functions/
 ```
 
 #### IDE
+Set the above environment variables.
+
 Run `com.salesforce.functions.proxy.ProxyApplication` with Java or Spring Boot configuration.
 
-### Invocation Scripts
+### Invocation Bash Scripts
 The following scripts invoke local functions sync and asynchronously.
 ```bash
 $ pwd
@@ -302,7 +309,7 @@ $ tree
 ```
 Edit the `.json` files that reflect your Organization and function payload.
 
-Supply an access token provided by
+Supply an access token provided by `sfdx force org display`.
 ```bash
 $ ./invokeSync.sh '00Dxx0000006JX6!AQEA...'
 ...
@@ -311,7 +318,7 @@ $ ./invokeAsync.sh '00Dxx0000006JX6!AQEA...'
 ...
 ```
 
-For async request, use `./queryAsync.sh` to query for last `AsyncFunctionInvocationRequest__c` record:
+For async request, use `./queryAsync.sh` to query for last `AsyncFunctionInvocationRequest__c` record.  Ensure that the invoking user has access to `AsyncFunctionInvocationRequest__c` and fields.
 ```bash
 $ ./queryAsync.sh
 {
@@ -327,8 +334,8 @@ $ ./queryAsync.sh
         "Response__c": "[{\"type\":\"Account\",\"fields\":{...}]",
         "Status__c": "SUCCESS",
         "StatusCode__c": 200,
-        "ExtraInfo__c": "{\"requestId\":\"00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-a00xx000000bxi1AAA-MyFunction-2020-09-03T20:56:27.608444Z\",\"source\":\"urn:event:from:salesforce/xx/00Dxx0000006IYJEA2/apex\",\"execTimeMs\":170.45832300186157,\"isFunctionError\":false,\"stack\":\"\",\"statusCode\":200}",
-        "Callback__c": "{\"functionName\":\"TypescriptFunction\"}",
+        "ExtraInfo__c": "{\"requestId\":\"00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-a00xx000000bxi1AAA-javafunction-2020-09-03T20:56:27.608444Z\",\"source\":\"urn:event:from:salesforce/xx/00Dxx0000006IYJEA2/apex\",\"execTimeMs\":170.45832300186157,\"isFunctionError\":false,\"stack\":\"\",\"statusCode\":200}",
+        "Callback__c": "{\"functionName\":\"JavaFunction\"}",
         "CallbackType__c": "InvokeJavaFunction.Callback",
         "LastModifiedDate": "2023-04-10T22:48:12.000+0000"
       }

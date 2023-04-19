@@ -23,7 +23,8 @@ const HEADER_REQUEST_ID = 'x-request-id';
 const HEADER_FUNCTION_REQUEST_CONTEXT = 'ce-sffncontext';
 const HEADER_SALESFORCE_CONTEXT = 'ce-sfcontext';
 const HEADER_EXTRA_INFO = 'x-extra-info';
-const HEADER_ORG_ID_18 = "x-org-id-18";
+const HEADER_ORG_ID_18 = 'x-org-id-18';
+const REQUIRED_CLOUD_EVENT_HEADERS = ['ce-specversion', 'ce-id', 'ce-datacontenttype', 'ce-source', 'ce-type'];
 
 // Other constants
 const FUNCTION_INVOCATION_TYPE_SYNC = 'com.salesforce.function.invoke.sync';
@@ -47,7 +48,10 @@ function throwError(msg, statusCode, requestId) {
     throw err;
 }
 
-class Config {
+/**
+ * Encapsulates proxy config.
+ */
+export class Config {
     constructor(env) {
         this.env = env;
     }
@@ -63,7 +67,7 @@ class Config {
         if (encodedPrivateKey) {
             this.privateKey = Buffer.from(encodedPrivateKey, 'base64').toString('utf8');
         } else if (this.env[PRIVATE_KEY_FILEPATH_CONFIG_VAR_NAME]) {
-            this.privateKey = readFileSync(this.env.PRIVATE_KEY_FILEPATH);
+            this.privateKey = readFileSync(this.env[PRIVATE_KEY_FILEPATH_CONFIG_VAR_NAME]);
         }
         this.clientId = this.env[CONSUMER_KEY_CONFIG_VAR_NAME];
         this.audience = this.env[SF_AUDIENCE_CONFIG_VAR_NAME];
@@ -93,6 +97,9 @@ class Config {
 }
 const config = new Config(process.env);
 
+/**
+ * Base context providing utilties for extending classes.
+ */
 class BaseContext {
     constructor(requestId) {
         this.requestId = requestId;
@@ -106,9 +113,10 @@ class BaseContext {
 /**
  * Header 'ce-sffncontext': function request context.
  *
+ * Eg:
  *  {
- *     'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-uuid-MyFunction-2023-03-23T15:18:53.429-0700',
- *     'functionName': 'MyFunction',
+ *     'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-uuid-typescriptfunction-2023-03-23T15:18:53.429-0700',
+ *     'functionName': 'typescriptfunction',
  *     'resource': 'https://...',
  *     'source': 'urn:event:from:salesforce/<instance>/<orgId>/<platform origin, eg apex>',
  *     'type': 'com.salesforce.function.invoke.sync',
@@ -154,11 +162,11 @@ export class FunctionContext extends BaseContext {
 /**
  * 'userContext' part of header 'ce-sfcontext'.
  *
+ *  Eg:
  *  {
  *      'orgId': '00Dxx0000006IYJ',
  *      'userId': '005xx000001X8Uz',
  *      'username': 'admin@example.com',
- *      'onBehalfOfUserId': '',
  *      'salesforceBaseUrl': 'https://na1.salesforce.com',
  *      'orgDomainUrl': 'https://mycompany.my.salesforce.com',
  * 	    'namespace': ''
@@ -175,7 +183,7 @@ export class UserContext extends BaseContext {
 
     validate() {
         if (!this.orgId) {
-            throwError('Org ID not provided', 400, this.requestId);
+            throwError('Organization ID not provided', 400, this.requestId);
         }
 
         if (!this.username) {
@@ -189,8 +197,9 @@ export class UserContext extends BaseContext {
 }
 
 /**
- * Header 'ce-sfcontext': Salesforce context, ie the context of the requesting Org and user.
+ * Header 'ce-sfcontext': Salesforce context, ie the contexts of the requesting Organization and user.
  *
+ * Eg:
  *  {
  *     'apiVersion': '57.0',
  *     'payloadVersion': '0.1',
@@ -218,20 +227,32 @@ export class SalesforceContext extends BaseContext {
     }
 }
 
+/**
+ * Handles HTTP requests.
+ */
+export class HttpRequestUtil {
+    async request(url, opts, json = true) {
+        return json ? await got(url, opts).json() : await got(url, opts);
+    }
+}
+
+/**
+ * Base request handler providing common sync and async handling.
+ */
 class BaseRequestHandler {
-    constructor(request, reply) {
+    constructor(config, request, reply) {
+        this.config = config;
         this.request = request;
         this.reply = reply;
         this.requestId = this.request.headers[HEADER_REQUEST_ID];
         this.logger = this.request.log;
+        this.httpRequestUtil = new HttpRequestUtil();
     }
 
     /**
      * Parse and validate 'ce-sffncontext' and 'ce-sfcontext' headers.  See FunctionContext and SalesforceContext.
      *
-     * @param requestId
-     * @param headers
-     * @returns {{sfFnContext: *, sfContext: *}}
+     * @returns {{sfFnContext: FunctionContext, sfContext: SalesforceContext}}
      */
     parseAndValidateContexts() {
         const headers = this.request.headers;
@@ -278,13 +299,12 @@ class BaseRequestHandler {
      *  - ce-specversion: version of CloudEvent schema
      *  - ce-id: see x-request-id
      *  - ce-source: source of request
+     *  - ce-datacontenttype: data type of request
      *  - ce-type: type of request
-     *  - ce-time: origin time of request
-     *  - ce-sfcontext: Salesforce context - context of invoking Org
+     *  - ce-sfcontext: Salesforce context - context of invoking Organization
      *  - ce-sffncontext: context of function request
      *
-     * @param headers
-     * @returns {{requestId: string, requestProvidedAccessToken: string, sfFnContext: *, sfContext: *}}
+     * @returns {{requestId: string, requestProvidedAccessToken: string}}
      */
     parseAndValidateHeaders() {
         const headers = this.request.headers;
@@ -305,12 +325,15 @@ class BaseRequestHandler {
             throwError('Authorization accessToken not found', 400, this.requestId);
         }
 
-        // Parse and validate function request and salesforce contexts
-        const {sfFnContext, sfContext} = this.parseAndValidateContexts(this.requestId);
+        REQUIRED_CLOUD_EVENT_HEADERS.forEach((ce) => {
+            if (!headers[ce]) {
+                throwError(`${ce} header not found`, 400, this.requestId);
+            }
+        });
 
         this.logger.info(`[${this.requestId}] Validated request headers - looks good`);
 
-        return {requestId: this.requestId, requestProvidedAccessToken, sfFnContext, sfContext};
+        return {requestId: this.requestId, requestProvidedAccessToken};
     }
 
     /**
@@ -339,7 +362,7 @@ class BaseRequestHandler {
     }
 
     /**
-     * Validate that requesting org is expected org (orgId18) by using given token to verify org info
+     * Validate that requesting Organization is expected Organization (orgId18) by using given token to verify Organization info
      * provided by /userinfo API.
      *
      * Alternative approach that is simpler and efficient, but may not be as secure is to validate a
@@ -367,8 +390,8 @@ class BaseRequestHandler {
             throwError(`Unable to validate request (/userinfo): ${err.message}`, this.requestId);
         }
 
-        if (!userInfo || config.orgId18 !== userInfo.organization_id) {
-            this.logger.warn(`Unauthorized caller from org ${userInfo.organization_id}, expected ${config.orgId18}`);
+        if (!userInfo || this.config.orgId18 !== userInfo.organization_id) {
+            this.logger.warn(`Unauthorized caller from Organization ${userInfo.organization_id}, expected ${this.config.orgId18}`);
             throwError('Unauthorized request', 401, this.requestId);
         }
 
@@ -378,11 +401,14 @@ class BaseRequestHandler {
     /**
      * Validate expected payload and that the function invoker is of the expected org.
      *
-     * @returns {Promise<{requestId: string, requestProvidedAccessToken: string, sfFnContext: *, sfContext: *}>}
+     * @returns {Promise<{requestId: string, requestProvidedAccessToken: string, sfFnContext: FunctionContext, sfContext: SalesforceContext}>}
      */
     async validate() {
         // Parse and validate request
-        const {requestId, requestProvidedAccessToken, sfFnContext, sfContext} = this.parseAndValidateHeaders();
+        const {requestId, requestProvidedAccessToken} = this.parseAndValidateHeaders();
+
+        // Parse and validate function and salesforce contexts
+        const {sfFnContext, sfContext} = this.parseAndValidateContexts();
 
         // Validate that the context's orgId matches the accessToken
         await this.validateCaller(sfContext.userContext.orgDomainUrl, requestProvidedAccessToken);
@@ -407,13 +433,13 @@ class BaseRequestHandler {
         const isTest = (url.includes('.sandbox.') || url.includes('.scratch.'));
 
         const jwtOpts = {
-            issuer: config.clientId,
-            audience: config.audience || (isTest ? SANDBOX_AUDIENCE_URL : PROD_AUDIENCE_URL),
+            issuer: this.config.clientId,
+            audience: this.config.audience || (isTest ? SANDBOX_AUDIENCE_URL : PROD_AUDIENCE_URL),
             algorithm: 'RS256',
             expiresIn: 360,
         }
 
-        const signedJWT = jwt.sign({prn: sfContext.userContext.username}, config.privateKey, jwtOpts);
+        const signedJWT = jwt.sign({prn: sfContext.userContext.username}, this.config.privateKey, jwtOpts);
         const opts = {
             method: 'POST',
             headers: {
@@ -431,9 +457,9 @@ class BaseRequestHandler {
 
         // Mint!
         this.logger.info(`[${this.requestId}] Minting function ${isTest ? 'test ' : ' '}token for user ${sfContext.userContext.username}, audience ${jwtOpts.audience}, url ${url}, issuer ${jwtOpts.issuer.substring(0, 5)}...`);
-        let body;
+        let mintTokenResponse;
         try {
-            body = await await this.httpRequest(url, opts);
+            mintTokenResponse = await this.httpRequest(url, opts);
         } catch (err) {
             let errMsg;
             if (err.response) {
@@ -453,8 +479,8 @@ class BaseRequestHandler {
         this.logger.info(`[${this.requestId}] Minted function's token - hooray`);
 
         return {
-            functionsAccessToken: body.access_token,
-            instanceUrl: body.instance_url
+            functionsAccessToken: mintTokenResponse.access_token,
+            instanceUrl: mintTokenResponse.instance_url
         };
     }
 
@@ -462,8 +488,8 @@ class BaseRequestHandler {
      * Activate session-based Permission Sets, if applicable.
      *
      * @param sfFnContext
+     * @param sfContext
      * @param functionsAccessToken
-     * @param instanceUrl
      * @returns {Promise<void>}
      */
     async activateSessionPermSet(sfFnContext, sfContext, functionsAccessToken) {
@@ -488,8 +514,8 @@ class BaseRequestHandler {
         this.logger.debug(`[${this.requestId}] POST /actions/standard/activateSessionPermSet: ${JSON.stringify(inputs)}`);
 
         const url = this.assembleSalesforceAPIUrl(sfContext.userContext.orgDomainUrl,
-                                                  sfContext.apiVersion,
-                                              '/actions/standard/activateSessionPermSet');
+                                                         sfContext.apiVersion,
+                                                  '/actions/standard/activateSessionPermSet');
         const opts = {
             method: 'POST',
             headers: this.assembleSalesforceAPIHeaders(functionsAccessToken),
@@ -532,9 +558,6 @@ class BaseRequestHandler {
     /**
      * Re-assemble the function's context setting function's accessToken.
      *
-     * REVIEWME: This should use the token provided in the request that uses an Admin-controlled Connected App?
-     *
-     * @param headers
      * @param sfFnContext
      * @param functionsAccessToken
      */
@@ -549,6 +572,7 @@ class BaseRequestHandler {
 
     /**
      * Enrich request with function's accessToken activating session-based Permission Sets, if applicable.
+     *
      * @param sfFnContext
      * @param sfContext
      * @returns {Promise<void>}
@@ -565,14 +589,17 @@ class BaseRequestHandler {
     }
 
     async httpRequest(url, opts, json = true) {
-        return json ? await got(url, opts).json() : await got(url, opts);
+        return await this.httpRequestUtil.request(url, opts, json);
     }
 }
 
+/**
+ * Handles sync requests.
+ */
 export class SyncRequestHandler extends BaseRequestHandler {
 
-    constructor(request, reply) {
-        super(request, reply);
+    constructor(config, request, reply) {
+        super(config, request, reply);
     }
 
     /**
@@ -591,10 +618,13 @@ export class SyncRequestHandler extends BaseRequestHandler {
     }
 }
 
+/**
+ * Handles async requests.
+ */
 export class AsyncRequestHandler extends BaseRequestHandler {
 
-    constructor(request, reply) {
-        super(request, reply);
+    constructor(config, request, reply) {
+        super(config, request, reply);
     }
 
     /**
@@ -678,13 +708,13 @@ export class AsyncRequestHandler extends BaseRequestHandler {
     }
 
     /**
-     * Handle async request invoking function and saving response to associated AsyncFunctionInvocationRequest__c.
+     * Handle async request invoking function.
      *
-     * @returns {Promise<void>}
+     * @param sfFnContext
+     * @returns {Promise<{body: string, extraInfo: string, statusCode: number}>}
      */
-    async invokeFunction() {
-        const { requestId, requestProvidedAccessToken, sfFnContext, sfContext } = this.parseAndValidateHeaders();
-        this.logger.info(`[${requestId}] Invoking async function ${sfFnContext.functionName}...`);
+    async invokeFunction(sfFnContext) {
+        this.logger.info(`[${this.requestId}] Invoking async function ${sfFnContext.functionName}...`);
 
         const opts = {
             method: this.request.method,
@@ -696,7 +726,7 @@ export class AsyncRequestHandler extends BaseRequestHandler {
         let statusCode, body, extraInfo;
         try {
             // Invoke function!
-            const functionResponse = await this.httpRequest(config.functionUrl, opts, false);
+            const functionResponse = await this.httpRequest(this.config.functionUrl, opts, false);
             statusCode = functionResponse.statusCode;
             body = functionResponse.body;
             extraInfo = functionResponse.headers[HEADER_EXTRA_INFO];
@@ -707,13 +737,20 @@ export class AsyncRequestHandler extends BaseRequestHandler {
             body = response.body;
             extraInfo = response.headers[HEADER_EXTRA_INFO];
         } finally {
-            this.logger.info(`[${requestId} Invoked function ${sfFnContext.functionName} in ${Date.now() - startMs}ms`);
+            this.logger.info(`[${this.requestId} Invoked function ${sfFnContext.functionName} in ${Date.now() - startMs}ms`);
         }
 
-        await this.updateAsyncFunctionResponse(sfFnContext, sfContext, body, statusCode, extraInfo);
+        return {
+            body,
+            extraInfo,
+            statusCode
+        };
     }
 }
 
+/**
+ * Handles health check requests.
+ */
 export class HealthCheckRequestHandler extends BaseRequestHandler {
 
     constructor(request, reply) {
@@ -732,8 +769,8 @@ export class HealthCheckRequestHandler extends BaseRequestHandler {
         this.request.log.info('Handling function /healthcheck request');
 
         const orgId18 = this.request.headers[HEADER_ORG_ID_18];
-        if (!orgId18 || config.orgId18 !== orgId18) {
-            this.logger.warn(`[${this.requestId}] Unauthorized caller from org ${orgId18}, expected ${config.orgId18}`);
+        if (!orgId18 || this.config.orgId18 !== orgId18) {
+            this.logger.warn(`[${this.requestId}] Unauthorized caller from Organization ${orgId18}, expected ${this.config.orgId18}`);
             throwError('Unauthorized request', 401, this.requestId);
         }
 
@@ -772,35 +809,39 @@ export class HealthCheckRequestHandler extends BaseRequestHandler {
         const startMs = Date.now();
         try {
             // Invoke function!
-            return await this.httpRequest(config.functionUrl, opts, false);
+            return await this.httpRequest(this.config.functionUrl, opts, false);
         } finally {
             this.logger.info(`[${this.requestId}] Invoked function health check in ${Date.now() - startMs}ms`);
         }
     }
 }
 
+/**
+ * Handles start the function server.
+ */
 class FunctionServer {
-    constructor(logger) {
+    constructor(config, logger) {
+        this.config = config;
         this.logger = logger;
     }
 
     start() {
         const args = [
-            config.runtimeCLIPath,
+            this.config.runtimeCLIPath,
             'serve',
             `${__dirname}/..`,
             '-p',
-            config.functionPort
+            this.config.functionPort
         ];
         this.logger.info(`Starting function w/ args: ${args.join(' ')}`);
 
-        if (config.functionDebugPort) {
+        if (this.config.functionDebugPort) {
             args.push('-d');
-            args.push(config.functionDebugPort);
+            args.push(this.config.functionDebugPort);
         }
 
         this.functionProcess = spawn('node', args,{});
-        this.logger.info(`Started function started on port ${config.functionPort}, process pid ${this.functionProcess.pid}`);
+        this.logger.info(`Started function started on port ${this.config.functionPort}, process pid ${this.functionProcess.pid}`);
 
         this.functionProcess.stdout.on('data', buff => {
             const line = buff.toLocaleString();
@@ -820,11 +861,14 @@ class FunctionServer {
     }
 }
 
+/**
+ * Handles starting and configuring the proxy server.
+ */
 export class ProxyServer {
     constructor(fastify) {
         this.fastify = fastify;
         this.logger = fastify.log;
-        this.functionServer = new FunctionServer(this.logger);
+        this.functionServer = new FunctionServer(config, this.logger);
     }
 
     /**
@@ -849,7 +893,7 @@ export class ProxyServer {
             prefix: '/sync',
             // Validate and enrich sync requests
             preHandler: async (request, reply) => {
-                const requestHandler = new SyncRequestHandler(request, reply);
+                const requestHandler = new SyncRequestHandler(config, request, reply);
                 await requestHandler.handle();
             },
             replyOptions: {
@@ -869,7 +913,7 @@ export class ProxyServer {
          * sent to disconnect the original request.  The 'onResponse' handler then makes a separate request to the function.
          */
         this.fastify.post('/async', async function (request, reply) {
-            const requestHandler = new AsyncRequestHandler(request, reply);
+            const requestHandler = new AsyncRequestHandler(config, request, reply);
             await requestHandler.handle();
             reply.code(201);
         });
@@ -882,10 +926,11 @@ export class ProxyServer {
                 return;
             }
 
-            const requestHandler = new AsyncRequestHandler(request, reply);
-            const { sfFnContext } = requestHandler.parseAndValidateContexts(request.headers[HEADER_REQUEST_ID]);
+            const requestHandler = new AsyncRequestHandler(config, request, reply);
+            const { sfFnContext, sfContext } = requestHandler.parseAndValidateContexts();
             if (sfFnContext && FUNCTION_INVOCATION_TYPE_ASYNC === sfFnContext.type) {
-                await requestHandler.invokeFunction();
+                const {body, extraInfo, statusCode} = await requestHandler.invokeFunction(sfFnContext);
+                await requestHandler.updateAsyncFunctionResponse(sfFnContext, sfContext, body, statusCode, extraInfo);
             }
         });
 
@@ -905,8 +950,8 @@ export class ProxyServer {
          * If close is called, also kill function server.
          */
         this.fastify.addHook('onClose', async (instance) => {
-            if (this.functionProcess) {
-                this.functionProcess.kill();
+            if (this.functionServer && this.functionServer.functionProcess) {
+                this.functionServer.functionProcess.kill();
             }
         });
 

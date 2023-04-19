@@ -1,23 +1,29 @@
 # Migration to Reference Function Framework
-## 1. Copy Reference Function Framework artifacts.
-### 1. Salesforce Platform metadata and source to your SFDX project. Metadata and source includes:
+
+The following migration steps assumes you have an existing Heroku account.  If not, see [Get started on Heroku today](https://signup.heroku.com/).
+
+If you're new to Heroku or for a refresher, see [How Heroku Works](https://devcenter.heroku.com/articles/how-heroku-works).
+
+## 1. Copy Reference Function Framework artifacts
+### 1. Reference Function Framework's Salesforce Platform metadata and source to your SFDX project. Metadata and source includes:
 - Apex Class in `force-app/main/default/classes/functions/`
 - Apex Trigger in `force-app/main/default/triggers/functions/`
 - Custom Objects in `force-app/main/default/objects/`
 
-This repo also includes an example implementation of the Reference Function Framework.  Example metadata and source includes:
+This repo also includes an example implementation of the Reference Function Framework.  The example invokes `Java` 
+and `Typescript` functions.  Example metadata and source includes:
 - Apex Class in `force-app/main/default/classes/`
 - Custom Metadata in `force-app/main/default/classes/customMetadata/`
 - Visualforce Pages in `force-app/main/default/pages/`
 - Permission Sets in `force-app/main/default/permissionsets/`
 - Remote Site Settings in `force-app/main/default/remoteSiteSettings/`
 
-### 2. Copy language-specific Reference Functions Framework artifacts to your function.
+### 2. Copy language-specific Reference Functions Framework proxy artifacts to your function
 See language-specific instructions:
 - [Java](functions/javafunction/README.md#artifacts)
 - [Node](functions/typescriptfunction/README.md#artifacts)
 
-## 2. Apply project changes.
+## 2. Apply function project changes
 See language-specific instructions:
 - [Java](functions/javafunction/README.md#changes)
 - [Node](functions/typescriptfunction/README.md#changes)
@@ -45,7 +51,13 @@ public class MyCallback implements FunctionCallback {
 }
 ```
 
-## 4. Create and configure a Heroku App for function
+## 4. Create and configure a Heroku App for each function
+For enterprise-grade security, use [Private Spaces](https://www.heroku.com/private-spaces) as a secure container for your Heroku Apps.  A Private Space, part of Heroku
+Enterprise, is a network isolated group of apps and data services with a dedicated runtime environment, provisioned to
+Heroku in a geographic region you specify. With Spaces you can build modern apps with the powerful Heroku developer
+experience and get enterprise-grade secure network topologies. This enables your Heroku applications to securely connect
+to on-premise systems on your corporate network and other cloud services, including Salesforce.
+
 See language-specific instructions:
 - [Java](functions/javafunction/README.md#app)
 - [Node](functions/typescriptfunction/README.md#app)
@@ -67,7 +79,7 @@ The following setups are done in your Organization's Setup.
    For more info, see [Generate a Self-Signed Certificate](https://help.salesforce.com/s/articleView?id=sf.security_keys_creating.htm&type=5) and [Create a Private Key and Self-Signed Digital Certificate](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_key_and_cert.htm).
 2. Create an internal JWT-based Connected App used by the proxy to validate function callers.
     1. On the **App Manager** page, click on **New Connected App**.
-    2. Fill in Connected App required fields, eg name as the name of the function (eg, for accompanying example function, "Java Function") for single-function use or "Functions Authentication" when used for all or multiple functions.
+    2. Fill in Connected App required fields, for example name as the name of the function (eg, for accompanying example function, "Java Function") for single-function use or "Functions Authentication" when used for all or multiple functions.
     2. Select **Use Digital Signatures** and upload the certificate file (.crt) created in step 1.
     3. The Connected App should have the following scopes:
         - **Manage user data via APIs** - used to proxy to access Salesforce APIs
@@ -77,7 +89,7 @@ The following setups are done in your Organization's Setup.
 
 
 ## 6. Create a session-based Permission Set that specifies function's Organization access
-Once a function token is minted, the proxy will activate given session-based Permission Sets authorizing specific capabilities, eg Standard and Custom Object access.
+Once a function token is minted, the proxy will activate given session-based Permission Sets authorizing specific capabilities, for example Standard and Custom Object access.
 
 A session-based Permission Set may be created for each function or a single session-based Permission Set for all functions.  Permission Set Groups references session-based multiple session-based Permission Sets are also supported.
 
@@ -110,7 +122,7 @@ $ sfdx force:source:deploy -p force-app/main/default/objects/AsyncFunctionInvoca
  AsyncFunctionInvocationRequest__c                 CustomObject force-app/main/default/objects/AsyncFunctionInvocationRequest__c/AsyncFunctionInvocationRequest__c.object-meta.xml 
 ```
 
-1. On the **Permission Sets** pages, select **New** to create a new Permission Set.  For function-specific Permission Set, name the Permission Set to associate to its function, eg "Java Function".
+1. On the **Permission Sets** pages, select **New** to create a new Permission Set.  For function-specific Permission Set, name the Permission Set to associate to its function, for example "Java Function".
 2. Provide a name and enable **Session Activation Required**.
 3. Under **Assigned Connected Apps**, assign the authorization Connected App created above.
 4. Under **Object Settings**, assign **Edit** access to `Async Function Invocation Requests` - required for asynchronous function invocation responses.
@@ -188,7 +200,7 @@ $ git push heroku main
 ...
 ```
 
-## 11. Verify that proxy and function started up
+## 11. Verify proxy and function started up
 See language-specific instructions:
 - [Java](functions/javafunction/README.md#startup)
 - [Node](functions/typescriptfunction/README.md#startup)
@@ -199,10 +211,10 @@ a `FunctionReference` Custom Metadata record.  `FunctionReference` Custom Metada
 such as associating session-based Permission Sets that are activated on the function's access token to authorize specific Org access.
 
 `FunctionReference` Custom Metadata fields:
-- `Endpoint__c` - URL of function.
-- `PermissionSetOrGroup__c` - the API name of session-based Permission Set name (eg, "Java Function") activated on function's token grant function access.
 - `ConsumerKey__c` - Consumer Key of the authentication Connected App (eg, "Function Authentication") used by `FunctionsMetadataAuthProvider` Apex class to authenticate function invokers.
 - `Certificate__c` - Certificate associated with the authentication Connected App (eg, "Function Authentication") used by `FunctionsMetadataAuthProvider` Apex class to authenticate function invokers.
+- `Endpoint__c` - URL of function.
+- `PermissionSetOrGroup__c` - (Optional) the API name of session-based Permission Set name (eg, "Java Function") activated on function's token grant function access.
 
 For each function, create a `FunctionReference` Custom Metadata record:
 ```bash
@@ -255,7 +267,7 @@ $ cat force-app/main/default/remoteSiteSettings/ThisOrg.remoteSite-meta.xml
     <url>https://mycompany.my.salesforce.com</url>
 </RemoteSiteSetting>
 
-# Used to generate an authentication token by the proxy and passsed to the function for Organization access.
+# Access to function
 $ cat force-app/main/default/remoteSiteSettings/JavaFunction.remoteSite-meta.xml 
 <?xml version="1.0" encoding="UTF-8"?>
 <RemoteSiteSetting xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -265,8 +277,12 @@ $ cat force-app/main/default/remoteSiteSettings/JavaFunction.remoteSite-meta.xml
 </RemoteSiteSetting>
 ```
 
-## 15. Deploy SFDX source to Org
+## 15. Deploy SFDX source to your Organization
 Deploy Function APIs - Apex Classes, Trigger, Custom Objects - and your integrations - Apex, `FunctionReference` Custom Metadata, etc - to your Organization.
+
+Before deploying, ensure that `force-app/main/default/customMetadata/FunctionReference.sfhxhello_javafunction.md-meta.xml` and 
+`force-app/main/default/customMetadata/FunctionReference.sfhxhello_typescriptfunction.md-meta.xml` fields are set to your 
+function endpoint and Organization settings, for example Connected App Consumer Key and Certificate. 
 
 ```bash
 $ sfdx force:source:deploy -p force-app/
@@ -347,25 +363,34 @@ See language-specific instructions:
 
 # Appendix
 ## Selecting and Setting Dyno Type
-<mark style="background-color: #FFFF00;font-weight:bold">TODO</mark>
+Heroku offers a variety of dyno types to support apps of all sizes, from small-scale projects to high-traffic production 
+services.  For more information, see [Dyno Types](https://devcenter.heroku.com/articles/dyno-types).
 
-If a function is encountering `Memory quota exceeded`, configure the function's Dyno type selecting a Dyno having increased memory and CPU characteristics.
+If a function is encountering `Memory quota exceeded`, configure the function's Dyno type selecting a Dyno having 
+increased memory and CPU characteristics.
 ```bash
 - 2023-04-06T19:13:35.124858+00:00 heroku[web.1]: Process running mem=591M(115.5%)
 - 2023-04-06T19:13:35.126587+00:00 heroku[web.1]: Error R14 (Memory quota exceeded)
 ```
 
-For more information, see [Dyno Types](https://devcenter.heroku.com/articles/dyno-types).
-
 ## Dyno Scaling
-<mark style="background-color: #FFFF00;font-weight:bold">TODO</mark>
+Heroku Apps can be scaled to run on multiple dynos simultaneously (except on Eco or Basic dynos). You can scale your 
+app's dyno formation up and down manually from the Heroku Dashboard or CLI.
+
+You can also configure Heroku Autoscaling for Performance-tier dynos, and for dynos running in Private Spaces. Threshold 
+autoscaling adds or removes web dynos from your app automatically based on current request latency.
 
 For more information, see [Scaling Your Dyno Formation](https://devcenter.heroku.com/articles/scaling)
 
+Dynos have default scaling characteristics per Dyno type.  For more information, see [Default Scaling Limits](https://devcenter.heroku.com/articles/dyno-types#default-scaling-limits).
+
+[Heroku Add-ons Dynos](https://elements.heroku.com/addons#dynos) provides several add-on options to schedule, scale, 
+and manage your dyno usage to your app's needs.
+
 ## Function Health Check API
-To check the health of a deployed function, invoke `curl -H "x-org-id-18: 00DDH0000005zbM2AQ' <function-url>/healthcheck`.  `x-org-id-18` header must match env/config var `ORG_ID_18` value.
+To check the health of a deployed function, the `<function-url>/healthcheck` API.  The `x-org-id-18` header must match env/config var `ORG_ID_18` value.
 ```bash
-$ curl https://javafunction.herokuapp.com/healthcheck
+$ curl -H "x-org-id-18: 00DDH00000000002AQ" https://javafunction.herokuapp.com/healthcheck
 "OK"
 ```
 #### Restart
@@ -378,7 +403,7 @@ Function logs:
 14:03:18.141 INFO  [RUNTIME] c.s.f.p.s.InvokeFunctionService - [healthcheck-1680811398112]: Invoked function https://javafunction.herokuapp.com in 18ms
 14:03:18.142 WARN  [RUNTIME] c.s.f.p.c.HealthCheckController - [healthcheck-1680811398112]: Received /healthcheck exception: I/O error on POST request for "https://javafunction.herokuapp.com": Connection refused (Connection refused); nested exception is java.net.ConnectException: Connection refused (Connection refused)
 14:03:18.142 INFO  [RUNTIME] c.s.f.p.c.HealthCheckController - [healthcheck-1680811398112]: Attempting to restart function...
-14:03:18.142 INFO  [RUNTIME] c.s.f.p.service.StartFunctionService - Starting function w/ args: /home/cwall/blt/tools/Linux/jdk/openjdk_11.0.18_11.62.18_x64/bin/java -jar /home/cwall/git/function-migration/functions/javafunction/proxy/target/sf-fx-runtime-java-runtime-1.1.3-jar-with-dependencies.jar serve /home/cwall/git/function-migration/functions/javafunction -h 0.0.0.0 -p 8080
+14:03:18.142 INFO  [RUNTIME] c.s.f.p.service.StartFunctionService - Starting function w/ args: /app/.jdk/bin/java -XX:+UseContainerSupport -Xmx671m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8 -jar /app/proxy/target/sf-fx-runtime-java-runtime-1.1.3-jar-with-dependencies.jar serve /app -h 0.0.0.0 -p 8080
 14:03:18.145 INFO  [RUNTIME] c.s.f.p.service.StartFunctionService - Started function started on port 8080, process pid 134600
 ...
 14:03:20.688 INFO  [RUNTIME] c.s.f.j.r.c.AbstractDetectorCommandImpl - Found 1 function(s) after 399ms.
@@ -408,4 +433,24 @@ Deleting Record... Success
 ```
 
 ## Long-running Processes
-<mark style="background-color: #FFFF00;font-weight:bold">TODO: Something about workers</mark>
+Background jobs can dramatically improve the scalability of a web app by enabling it to offload slow or CPU-intensive 
+tasks from its front-end. This helps ensure that the front-end can handle incoming web requests promptly, reducing the 
+likelihood of performance issues that occur when requests become backlogged.
+
+For more information, see [Worker Dynos, Background Jobs and Queueing](https://devcenter.heroku.com/articles/background-jobs-queueing).
+
+## Data
+Heroku provides three managed data services all available to function apps:
+- Heroku Postgres
+- Heroku Redis
+- Apache Kafka on Heroku
+
+For more information, see [Databases & Data Management](https://devcenter.heroku.com/categories/data-management).
+
+## Additional Security Features
+Heroku Shield is a set of Heroku platform services that offer additional security features needed for building high 
+compliance applications. Use Heroku Shield to build HIPAA or PCI compliant apps for regulated industries, such as 
+healthcare, life sciences, or financial services. Heroku Shield simplifies the complexity associated with regulatory 
+compliance, so you can enjoy same great developer experience when building, deploying, and managing your high compliance apps.
+
+For more information, see [Heroku Shield](https://www.heroku.com/shield).
