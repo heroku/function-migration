@@ -1,3 +1,6 @@
+/**
+ * Example of invoking a function using Reference Functions Framework.
+ */
 public class InvokeTypescriptFunction {
 
     static final String FUNCTION_NAME = 'TypescriptFunction';

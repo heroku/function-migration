@@ -1,3 +1,6 @@
+/**
+ * Represents the result of a synchronous or asynchronous function invocation.
+ */
 global class FunctionInvocationImpl implements FunctionInvocation {
     
     private String requestId;
@@ -73,7 +76,6 @@ global class FunctionInvocationImpl implements FunctionInvocation {
         return String.valueOf(extraInfoMap.get('stack'));
     }
 
-    // Parse in Apex, because it's a lot less cryptic than constructing an Apex enum in Java.
     private FunctionInvocationStatus parseStatus(String val) {
         if (val == 'Success') return FunctionInvocationStatus.SUCCESS;
         if (val == 'Error') return FunctionInvocationStatus.ERROR;
@@ -81,7 +83,6 @@ global class FunctionInvocationImpl implements FunctionInvocation {
         return null;
     }
 
-    // Parse in Apex, because it's a lot less cryptic than constructing an Apex enum in Java.
     private FunctionErrorType parseErrorType(Integer statusCode) {
         if (statusCode == null || statusCode == 503) return FunctionErrorType.UNEXPECTED_FUNCTION_EXCEPTION;
         if (statusCode == 500) return FunctionErrorType.FUNCTION_EXCEPTION;

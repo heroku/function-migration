@@ -3,6 +3,8 @@
 ## Introduction
 This guide and repo is an example of how Salesforce Functions may be ported to Heroku Apps.
 
+The contents of this repository are available under the Apache License Version 2.0 license. See the LICENSE file for more info.
+
 ## Heroku
 Heroku is a platform as a service based on a managed container system, with integrated data services and a powerful 
 ecosystem, for deploying and running modern apps. The Heroku developer experience is an app-centric approach for 

@@ -1,31 +1,32 @@
-/* Sample function HTTP request
-{
-  Context of the function request.  Set on request as 'ce-sffncontext' header, base64 encoded.
-  {
-    'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-uuid-MyFunction-2023-03-23T15:18:53.429-0700',
-    'functionName': 'MyFunction',
-    'resource': 'https://...',
-    'source': 'urn:event:from:salesforce/<instance>/<orgId>/<platform origin, eg apex>',
-    'type': 'com.salesforce.function.invoke.sync',
-    'requestTime': '2023-03-23T15:18:53.429-0700',
-    'functionInvocationId': '<AsyncFunctionInvocationRequest__c.ID>',
-    'permissionSets': '[ 'MyPermissionSet' ]'
-  }
-
-  Salesforce context - context of invoking Org. Set on request as 'ce-sfcontext' header, base64 encoded.
-  'apiVersion': '57.0',
-  'payloadVersion': '0.1',
-  'userContext': {
-    'orgId': '00Dxx0000006IYJ',
-    'userId': '005xx000001X8Uz',
-    'username': 'admin@example.com',
-    'onBehalfOfUserId': '',
-    'salesforceBaseUrl': 'https://na1.salesforce.com',
-    'orgDomainUrl': 'https://mycompany.my.salesforce.com',
-	'namespace': '',
-  }
-}
-*/
+/**
+ * Represents the contexts of a synchronous or asynchronous function invocation.
+ *
+ * Sample function HTTP request:
+ * 1. Context of the function request.  Set on request as 'ce-sffncontext' header, base64 encoded.
+ *   {
+ *     'id': '00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-uuid-MyFunction-2023-03-23T15:18:53.429-0700',
+ *     'functionName': 'MyFunction',
+ *     'resource': 'https://...',
+ *     'source': 'urn:event:from:salesforce/<instance>/<orgId>/<platform origin, eg apex>',
+ *     'type': 'com.salesforce.function.invoke.sync',
+ *     'requestTime': '2023-03-23T15:18:53.429-0700',
+ *     'functionInvocationId': '<AsyncFunctionInvocationRequest__c.ID>',
+ *     'permissionSets': '[ 'MyPermissionSet' ]'
+ *   }
+ *
+ * 2. Salesforce context - context of invoking Org. Set on request as 'ce-sfcontext' header, base64 encoded.
+ *   {
+ *     'apiVersion': '57.0',
+ *     'payloadVersion': '0.1',
+ *     'userContext': {
+ *     'orgId': '00Dxx0000006IYJ',
+ *     'userId': '005xx000001X8Uz',
+ *     'username': 'admin@example.com',
+ *     'salesforceBaseUrl': 'https://na1.salesforce.com',
+ *     'orgDomainUrl': 'https://mycompany.my.salesforce.com',
+ *     'namespace': '',
+ *   }
+ */
 global class FunctionInvocationRequest {
 
     public class IllegalStateException extends Exception {}

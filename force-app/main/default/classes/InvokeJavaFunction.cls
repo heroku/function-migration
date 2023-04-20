@@ -1,3 +1,6 @@
+/**
+ * Example of invoking a function using Reference Functions Framework.
+ */
 public class InvokeJavaFunction {
 
     static final String FUNCTION_NAME = 'JavaFunction';

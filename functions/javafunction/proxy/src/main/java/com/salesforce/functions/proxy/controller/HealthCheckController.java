@@ -56,7 +56,6 @@ public class HealthCheckController {
                     .body("Unauthorized request");
         }
 
-        // TODO: Validate caller
         // Pass on check to function
         HttpMethod method = HttpMethod.POST;
         List<String> healthCheckHeaderVal = Lists.newArrayList("true");

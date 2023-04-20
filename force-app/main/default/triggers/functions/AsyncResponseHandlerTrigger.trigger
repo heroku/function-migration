@@ -1,3 +1,6 @@
+/**
+ * Handles invoking the FunctionCallback implementations for asynchronous function invocations.
+ */
 trigger AsyncResponseHandlerTrigger on AsyncFunctionInvocationRequest__c (after update) {
     for (AsyncFunctionInvocationRequest__c afir : Trigger.new) {
         if (null == afir.StatusCode__c || 201 == afir.StatusCode__c)  {
@@ -23,7 +26,6 @@ trigger AsyncResponseHandlerTrigger on AsyncFunctionInvocationRequest__c (after 
         
         try {
             // Deserialize callback and enqueue callback invocation
-            // TODO: Handle namespace
             Type fullyQualifiedNameCallbackTypeClass = Type.forName(afir.CallbackType__c);
             FunctionCallback callback = (FunctionCallback)JSON.deserializeStrict(afir.Callback__c, fullyQualifiedNameCallbackTypeClass);
             FunctionCallbackQueueable callbackQueueable = new FunctionCallbackQueueable(callback, invocation);

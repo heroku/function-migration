@@ -548,7 +548,7 @@ class BaseRequestHandler {
 
         const failedActivations = activations.filter(activation => !activation.isSuccess);
         if (failedActivations && failedActivations.length > 0) {
-            // TODO: Output failed PermissionSet names from response
+            // TODO: If available, include failed PermissionSet names from response
             throwError(`Unable to activate session-based Permission Set(s) ${permissionSets.join(', ')}: ${JSON.stringify(failedActivations.map(failedActivation => failedActivation.errors))}`, 503, this.requestId);
         } else {
             this.logger.info(`[${this.requestId}] Activated session-based Permission Set(s): ${permissionSets.join(', ')} - yessir`);

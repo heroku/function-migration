@@ -23,7 +23,7 @@ public class FunctionCallbackQueueable implements Queueable {
 
     public void execute(QueueableContext context) {
         // Once the Function invocation completes,
-        // we call the customer's callback and pass the response.
+        // we call the callback and pass the response.
         this.callback.handleResponse(this.invocation);
     }
 }
