@@ -6,8 +6,8 @@ If you're new to Heroku or for a refresher, see [How Heroku Works](https://devce
 
 ## 1. Copy Reference Function Framework artifacts
 ### 1. Reference Function Framework's Salesforce Platform metadata and source to your SFDX project. Metadata and source includes:
-- Apex Class in `force-app/main/default/classes/functions/`
-- Apex Trigger in `force-app/main/default/triggers/functions/`
+- Apex Classes in `force-app/main/default/classes/functions/`
+- Apex Triggers in `force-app/main/default/triggers/functions/`
 - Custom Objects in `force-app/main/default/objects/`
 
 This repo also includes an example implementation of the Reference Function Framework.  The example invokes `Java` 
@@ -20,13 +20,13 @@ and `Typescript` functions.  Example metadata and source includes:
 
 ### 2. Copy language-specific Reference Functions Framework proxy artifacts to your function
 See language-specific instructions:
-- [Java](functions/javafunction/README.md#artifacts)
-- [Node](functions/typescriptfunction/README.md#artifacts)
+- Java [README](functions/javafunction/README.md#artifacts)
+- Node [README](functions/typescriptfunction/README.md#artifacts)
 
 ## 2. Apply function project changes
 See language-specific instructions:
-- [Java](functions/javafunction/README.md#changes)
-- [Node](functions/typescriptfunction/README.md#changes)
+- [Java](functions/javafunction/README.md#changes) (functions/javafunction)
+- [Node](functions/typescriptfunction/README.md#changes) (functions/typescriptfunction)
 
 ## 3. Update Apex that invokes functions
 - Update `functions.Function` Function API references removing `functions.` namespace from Function API calls.  See example below.
@@ -54,13 +54,13 @@ public class MyCallback implements FunctionCallback {
 ## 4. Create and configure a Heroku App for each function
 For enterprise-grade security, use [Private Spaces](https://www.heroku.com/private-spaces) as a secure container for your Heroku Apps.  A Private Space, part of Heroku
 Enterprise, is a network isolated group of apps and data services with a dedicated runtime environment, provisioned to
-Heroku in a geographic region you specify. With Spaces you can build modern apps with the powerful Heroku developer
+Heroku in a geographic region you specify. With Private Spaces you can build modern apps with the powerful Heroku developer
 experience and get enterprise-grade secure network topologies. This enables your Heroku applications to securely connect
 to on-premise systems on your corporate network and other cloud services, including Salesforce.
 
 See language-specific instructions:
-- [Java](functions/javafunction/README.md#app)
-- [Node](functions/typescriptfunction/README.md#app)
+- Java [README](functions/javafunction/README.md#app)
+- Node [README](functions/typescriptfunction/README.md#app)
 
 
 ## 5. Create a Connected App used to mint access tokens for function's Organization access
@@ -69,7 +69,7 @@ for Organization access.
 
 This Connected App and session-based Permission Set (create in the next step) determine what a function is authorized to do.
 
-You may create a Connected App for each function or use a single Connected App for all functions.
+You may create a Connected App for each function or use a single Connected App for all functions. However, each Salesforce org (i.e. Production, Sandbox, scratch) must configure their own Connected app.
 
 This document will refer to this Connected App as the authorization or authZ Connected App.
 
@@ -85,7 +85,8 @@ The following setups are done in your Organization's Setup.
         - **Manage user data via APIs** - used to proxy to access Salesforce APIs
         - **Perform requests at any time** - used by the proxy to mint an authorization token for function's Organization access
     4. On the **Manage** or **Edit Policies** page, set **Permitted Users** to **Admin-approved users are pre-authorized**.
-    5. On the **Manage Consumer Details** page, reveal and then copy **Consumer Key** value (also referred to as Issuer).
+    5. On the **Manage Consumer Details** page, reveal and then copy **Consumer Key** value (also referred to as Issuer). 
+    > Note: You will need the **Consumer Key** and **Client Secret** for use as Config Vars (i.e. `CONSUMER_KEY` and `ENCODED_PRIVATE_KEY`)with each of your Heroku apps
 
 
 ## 6. Create a session-based Permission Set that specifies function's Organization access
@@ -183,13 +184,13 @@ For Apex Batch and other Automated Process User invocations, ensure the "autopro
 
 ## 9. Set function config vars
 See language-specific instructions:
-- [Java](functions/javafunction/README.md#config)
-- [Node](functions/typescriptfunction/README.md#config)
+- Java [README](functions/javafunction/README.md#config)
+- Node [README](functions/typescriptfunction/README.md#config)
 
 ## 10. Deploy proxy and function to Heroku
 See language-specific instructions:
-- [Java](functions/javafunction/README.md#deploy)
-- [Node](functions/typescriptfunction/README.md#deploy)
+- Java [README](functions/javafunction/README.md#deploy)
+- Node [README](functions/typescriptfunction/README.md#deploy)
 
 When switching between functions, update the `remote` to the target function:
 ```bash
@@ -202,8 +203,8 @@ $ git push heroku main
 
 ## 11. Verify proxy and function started up
 See language-specific instructions:
-- [Java](functions/javafunction/README.md#startup)
-- [Node](functions/typescriptfunction/README.md#startup)
+- Java [README](functions/javafunction/README.md#startup)
+- Node [README](functions/typescriptfunction/README.md#startup)
 
 ## 12. Create FunctionReference Custom Metadata for each function
 Functions are represented in your Org as `FunctionReference` Custom Metadata.  `Function.get('<myproject>.<function>')` API reference
@@ -218,6 +219,8 @@ such as associating session-based Permission Sets that are activated on the func
 
 For each function, create a `FunctionReference` Custom Metadata record:
 ```bash
+# If app is deployed you can get the URL  from the CLI. If not, you can still set 
+# metadata if you know the name of your app, in this example it was `javafunction`
 # Set function URL in FunctionReference Custom Metadata
 $ heroku apps:info -s  | grep web_url | cut -d= -f2
 https://javafunction.herokuapp.com/
@@ -348,8 +351,8 @@ public class Callback implements FunctionCallback {
 ```
 
 See language-specific instructions:
-- [Java](functions/javafunction/README.md#invoke)
-- [Node](functions/typescriptfunction/README.md#invoke)
+- Java [README](functions/javafunction/README.md#invoke)
+- Node [README](functions/typescriptfunction/README.md#invoke)
 
 # Reference Functions Framework Examples
 See [InvokeJavaFunction](force-app/main/default/classes/InvokeJavaFunction.cls) and [InvokeTypescriptFunction](force-app/main/default/classes/InvokeTypescriptFunction.cls).
@@ -358,8 +361,8 @@ See `InvokeJavaFunction` and `InvokeTypescriptFunction` may be invoked via Visua
 
 # Local Development
 See language-specific instructions:
-- [Java](functions/javafunction/README.md#dev)
-- [Node](functions/typescriptfunction/README.md#dev)
+- Java [README](functions/javafunction/README.md#dev)
+- Node [README](functions/typescriptfunction/README.md#dev)
 
 # Appendix
 ## Selecting and Setting Dyno Type
@@ -374,8 +377,7 @@ increased memory and CPU characteristics.
 ```
 
 ## Dyno Scaling
-Heroku Apps can be scaled to run on multiple dynos simultaneously (except on Eco or Basic dynos). You can scale your 
-app's dyno formation up and down manually from the Heroku Dashboard or CLI.
+Heroku Apps can be scaled to run on multiple dynos simultaneously (except on Eco or Basic dynos). You can scale your app's dyno formation up and down manually from the Heroku Dashboard or CLI.
 
 You can also configure Heroku Autoscaling for Performance-tier dynos, and for dynos running in Private Spaces. Threshold 
 autoscaling adds or removes web dynos from your app automatically based on current request latency.
@@ -433,9 +435,7 @@ Deleting Record... Success
 ```
 
 ## Long-running Processes
-Background jobs can dramatically improve the scalability of a web app by enabling it to offload slow or CPU-intensive 
-tasks from its front-end. This helps ensure that the front-end can handle incoming web requests promptly, reducing the 
-likelihood of performance issues that occur when requests become backlogged.
+Background jobs can dramatically improve the scalability of a web app by enabling it to offload slow or CPU-intensive tasks from its front-end. This helps ensure that the front-end can handle incoming web requests promptly, reducing the likelihood of performance issues that occur when requests become backlogged.
 
 For more information, see [Worker Dynos, Background Jobs and Queueing](https://devcenter.heroku.com/articles/background-jobs-queueing).
 
@@ -448,9 +448,6 @@ Heroku provides three managed data services all available to function apps:
 For more information, see [Databases & Data Management](https://devcenter.heroku.com/categories/data-management).
 
 ## Additional Security Features
-Heroku Shield is a set of Heroku platform services that offer additional security features needed for building high 
-compliance applications. Use Heroku Shield to build HIPAA or PCI compliant apps for regulated industries, such as 
-healthcare, life sciences, or financial services. Heroku Shield simplifies the complexity associated with regulatory 
-compliance, so you can enjoy same great developer experience when building, deploying, and managing your high compliance apps.
+Heroku Shield is a set of Heroku platform services that offer additional security features needed for building high compliance applications. Use Heroku Shield to build HIPAA or PCI compliant apps for regulated industries, such as healthcare, life sciences, or financial services. Heroku Shield simplifies the complexity associated with regulatory compliance, so you can enjoy same great developer experience when building, deploying, and managing your high compliance apps.
 
 For more information, see [Heroku Shield](https://www.heroku.com/shield).

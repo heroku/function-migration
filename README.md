@@ -3,11 +3,10 @@
 ## Introduction
 This guide and repo is an example of how Salesforce Functions may be ported to Heroku Apps.
 
-The contents of this repository are available under the Apache License Version 2.0 license. See the LICENSE file for more info.
+The contents of this repository are available for you to modify and use under the Apache License Version 2.0 license. See the LICENSE file for more info.
 
 ## Heroku
-Heroku is a platform as a service based on a managed container system, with integrated data services and a powerful 
-ecosystem, for deploying and running modern apps. The Heroku developer experience is an app-centric approach for 
+Heroku is a platform as a service based on a managed container system, with integrated data services and a powerful ecosystem for deploying and running modern apps. The Heroku developer experience is an app-centric approach for 
 software delivery, integrated with today’s most popular developer tools and workflows.
 
 Heroku makes the processes of deploying, configuring, scaling, tuning, and managing apps as simple and straightforward 
@@ -15,28 +14,35 @@ as possible, so that developers can focus on what’s most important: building g
 
 Deploying and maintaining apps should be frictionless, and these capabilities should be a part of a company's DNA.
 
-[How Heroku Works](https://devcenter.heroku.com/articles/how-heroku-works).
+Using Heroku is required for these example deployments and if you are not familiar with how it works, please see the [How Heroku Works](https://devcenter.heroku.com/articles/how-heroku-works) article at the Heroku DevCenter.
 
 ## Reference Functions Framework
 
 ### Overview
-The Reference Functions Framework is an example of how to lift-and-shift Salesforce Functions to Heroku Apps.
+The Reference Functions Framework is an example of how to lift-and-shift Salesforce Functions to run securely as Heroku Apps run in [Private Spaces](https://devcenter.heroku.com/articles/private-spaces).
 
 The Reference Functions Framework includes:
-- Apex Classes and an Apex Trigger as APIs to invoke functions synchronously and asynchronously.
+- Apex Classes and an Apex Trigger as APIs to invoke functions, suporting  both synchronous and asynchronous invocation.
 - A new Custom Metadata type representing deployed, invocable functions (`FunctionReference`).
 - A new Custom Object that tracks asynchronous requests and handles asynchronous responses (`AsyncFunctionInvocationRequest`).
 - Language-specific proxies (Java and Node) to be deployed alongside and in front of a function to validate and manage function requests.
 
-Synchronous requests are Apex callouts to the function.  Standard Apex callout limits apply.
 
-Asynchronous requests are Apex callouts via `@Future`.  Function responses are stored in an associated 
-`AsyncFunctionInvocationRequest`.  An Apex Trigger handles invoking the associated callback implementation.
 
-License-based Salesforce API considerations and limits 
-([API Request Limits and Allocations](https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta/salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_api.htm)) apply.
+#### Architecture
+The following diagram shows how the new classes and Custom Objects interact with the function code and proxy deployed as a Heroku app. Yellow boxes indicated code provided in this example repo and green boxes indicate customer Apex or function code. Salesforce and Heroku platforms are indicated in blue and purple.
 
 ![Architecture](assets/images/reference-functions-framework.png)
+
+Notes:
+
+> Synchronous requests are Apex callouts to the function.  Standard Apex callout limits apply.
+
+> Asynchronous requests are Apex callouts via `@Future`.  Function responses are stored in an associated 
+`AsyncFunctionInvocationRequest`.  An Apex Trigger handles invoking the associated callback implementation.
+
+> License-based Salesforce API considerations and limits 
+([API Request Limits and Allocations](https://developer.salesforce.com/docs/atlas.en-us.salesforce_app_limits_cheatsheet.meta/salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_api.htm)) apply.
 
 ### Reference Apex Function API
 The Reference Functions Framework provides Apex classes as APIs to invoke functions.
@@ -65,12 +71,10 @@ force-app/main/default/triggers/functions/
 #### Functions API
 The Reference Functions Framework's `Function` API is similar to Salesforce Functions' `Function` API, see [Function Class](https://developer.salesforce.com/docs/atlas.en-us.apexref.meta/apexref/apex_class_functions_Function.htm#apex_class_functions_Function).
 
-The `get(...)` method takes a `FunctionReference` Custom Metadata name reference.  The method will query for the 
-FunctionReference` record and validate invocation configuration, eg ensure that the invoking user is assign to the 
-given session-based Permission Set. 
+The `get(...)` method takes a `FunctionReference` Custom Metadata name reference.  The method will query for the `FunctionReference` record and validate the invocation configuration (i.e. ensure that the invoking user is assign to the 
+given session-based Permission Set). 
 
-The `invoke(...)` method invokes the `FunctionReference` Custom Metadata record's function with given parameters.  
-If a `FunctionCallback` implementation is given, the function will be invoked asynchronously.
+The `invoke(...)` method invokes the `FunctionReference` Custom Metadata record's function with given parameters.  And as with the standard Salesforce Function API, if a `FunctionCallback` implementation is given, the function will be invoked asynchronously.
 
 Apex's callout considerations ([Invoking Callouts Using Apex](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_callouts.htm)) and limits ([Callout Limits and Limitations](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_callouts_timeouts.htm)) apply.
 
@@ -134,18 +138,17 @@ public class Callback implements FunctionCallback {
 ```
 
 ### FunctionReference__mdt Custom Metadata
-Metadata enables customers and Partners to extend, expose to Admins, package, and progress their Platform apps from deployment environment to deployment environment.
+Metadata enables customers and partners to extend, expose to Admins, package, and progress their Platform apps from deployment environment to deployment environment.
 
 `FunctionReference` Custom Metadata records represent deployed, invocable functions.
 
 Fields:
 - **Endpoint__c** - URL of function.  Function endpoints change per deployment environment, eg Scratch, Sandbox, and 
 Production Organizations will each have their own deployed function.
-- **PermissionSetOrGroup__c** - session-based Permission Set API name activated on function's token grant function access.  
-If applicable, include namespace, eg `mynamespace__MyPermissionSet`.
+- **PermissionSetOrGroup__c** - session-based Permission Set API name activated on function's token grant function access.  If applicable, include namespace, eg `mynamespace__MyPermissionSet`.
 - **ConsumerKey__c** - Consumer Key or Issuer of the authentication Connected App (eg, the *Functions Authentication* 
 Connected App create below) used by `FunctionsMetadataAuthProvider` Apex class to authenticate function invokers.
-- **Certificate__c** - Certificate name, created via [Certificates and Keys](https://help.salesforce.com/s/articleView?id=sf.security_keys_about.htm&type=5), 
+- **Certificate__c** - Certificate name, created via Salesforce [Certificates and Keys](https://help.salesforce.com/s/articleView?id=sf.security_keys_about.htm&type=5), 
 that is associated with the authentication Connected App (eg, the *Functions Authentication* Connected App created below) 
 used by `FunctionsMetadataAuthProvider` Apex class to authenticate function invokers.
 
@@ -154,9 +157,11 @@ eg stage-specific (Scratch, Sandbox, etc) function endpoints.
 
 For each function, create a `FunctionReference` Custom Metadata record:
 ```bash
-# Set function URL as FunctionReference.Endpoint__c
+# If you have already deployed your app, get the app URL from Heroku 
 $ heroku apps:info -s  | grep web_url | cut -d= -f2
 https://javafunction.herokuapp.com/
+# Use this URL as the function's FunctionReference.Endpoint__c.
+# If you have not yet deployed, be sure to name your app to match the Endpoint reference.
 ```
 
 #### Example
@@ -186,7 +191,7 @@ $ cat force-app/main/default/customMetadata/FunctionReference.sfhxhello_javafunc
 ```
 
 The Reference Function Framework queries to the `FunctionReference__mdt` record for each `Functions.get(<function name>)` 
-call.  The `get()` API will validate the reference, validate that`PermissionSetOrGroup__c` exists (if provided) and 
+call.  The `get()` API will validate the reference, validate that `PermissionSetOrGroup__c` exists (if provided) and 
 ensure that the invoking user is assigned.  `Endpoint__c` is used by `invoke()` to invoke the function.
 
 ### AsyncFunctionInvocationRequest__c Custom Object
@@ -194,12 +199,12 @@ ensure that the invoking user is assigned.  `Endpoint__c` is used by `invoke()` 
 `AsyncFunctionInvocationRequest` Custom Object manages and tracks asynchronous function invocations.
 
 On async invocation, a `AsyncFunctionInvocationRequest` record is created and updated by the proxy capturing the 
-function's response or any failure.  Once updated, a trigger invokes the given `FunctionCallback` implementation.
+function's response or any failure.  Once the record is updated, a trigger invokes the given `FunctionCallback` implementation.
 
 `StatusCode__c` of `500` generally means an error occurred in the function.  `StatusCode__c` of `503` generally means 
 an error occurred in the framework, Salesforce, Heroku, or somewhere in-between.. 
 
-`AsyncFunctionInvocationRequest` records must be deleted on a regular basis to ensure efficient Organization storage.
+> Note: `AsyncFunctionInvocationRequest` records must be deleted on a regular basis to ensure efficient Organization storage.
 
 ```bash
 force-app/main/default/objects/AsyncFunctionInvocationRequest__c/
