@@ -1,0 +1,10 @@
+{
+    "orgName": "Salesforce Functions Company",
+    "edition": "Developer",
+    "features": ["Functions"],
+    "settings": {
+        "lightningExperienceSettings": {
+            "enableS1DesktopEnabled": true
+        }
+    }
+}
