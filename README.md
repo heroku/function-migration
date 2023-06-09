@@ -98,7 +98,10 @@ The Reference Functions Framework provides Apex classes as APIs to invoke functi
 #### Classes and Trigger
 See class and trigger file comments for more details.
 ```bash
-force-app/main/default/classes/functions/
+# Apex classes
+force-app/main/default/classes/functions
+├── AsyncFunctionInvocationQueueable.cls
+├── AsyncResponseHandlerTriggerHandler.cls
 ├── FunctionCallback.cls
 ├── FunctionCallbackQueueable.cls
 ├── Function.cls
@@ -109,9 +112,13 @@ force-app/main/default/classes/functions/
 ├── FunctionInvocationImpl.cls
 ├── FunctionInvocationRequest.cls
 ├── FunctionInvocationStatus.cls
+├── FunctionInvoker.cls
+├── FunctionReferenceMetadataProviderImpl.cls
+├── FunctionReferenceProvider.cls
 ├── FunctionsAuthProvider.cls
-└── FunctionsMetadataAuthProviderImpl.cls
+├── FunctionsMetadataAuthProviderImpl.cls
 
+# Apex triggers
 force-app/main/default/triggers/functions/
 └── AsyncResponseHandlerTrigger.trigger
 ```
@@ -284,20 +291,20 @@ an error occurred in the Reference Functions Framework, within Salesforce, Herok
 force-app/main/default/objects/AsyncFunctionInvocationRequest__c/
 ├── AsyncFunctionInvocationRequest__c.object-meta.xml
 └── fields
-    ├── Callback__c.field-meta.xml      // Serialized Apex callback object
-    ├── CallbackType__c.field-meta.xml  // Apex callback class name
-    ├── Context__c.field-meta.xml       // Function and Salesforce contexts of request
-    ├── ExtraInfo__c.field-meta.xml     // URL encode extra info about a function invocation, eg execution time (ms) and function stacktrace on error
-    ├── Request__c.field-meta.xml       // Function request payload
-    ├── RequestId__c.field-meta.xml     // Function request request UUID
-    ├── Response__c.field-meta.xml      // Function response
-    ├── Status__c.field-meta.xml        // Status of function request
-    └── StatusCode__c.field-meta.xml    // HTTP status code of function request
+    ├── AsyncInvocationJobId__c.field-meta.xml  // Apex Job Id to track async queued invocation
+    ├── Callback__c.field-meta.xml              // Serialized Apex callback object
+    ├── CallbackType__c.field-meta.xml          // Apex callback class name
+    ├── Context__c.field-meta.xml               // Function and Salesforce contexts of request
+    ├── ExtraInfo__c.field-meta.xml             // URL encode extra info about a function invocation, eg execution time (ms) and function stacktrace on error
+    ├── Request__c.field-meta.xml               // Function request payload
+    ├── RequestId__c.field-meta.xml             // Function request request UUID
+    ├── Response__c.field-meta.xml              // Function response
+    ├── Status__c.field-meta.xml                // Status of function request
+    └── StatusCode__c.field-meta.xml            // HTTP status code of function request
 ```
 
 Either via `FunctionReference.PermissionSetOrGroup__c`'s Permission Set or another Permission Set, invoking users must be assigned 
 **Edit** access to `AsyncFunctionInvocationRequest__c`.
-
 
 ## Proxy
 A Heroku App function consists of 2 webapps - a language-specific proxy webapp - provided by the Reference 
