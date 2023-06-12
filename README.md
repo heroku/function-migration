@@ -17,7 +17,7 @@ Salesforce does not warrant that the software code in this repository will repro
 ## Heroku
 
 Heroku is a Platform as a Service based on a managed container system. Heroku has integrated data services and a powerful ecosystem for deploying and running modern apps. 
-The Heroku developer experience is an app-cenatric approach for software delivery that’s integrated with today’s most popular developer tools and workflows.
+The Heroku developer experience is an app-centric approach for software delivery that’s integrated with today’s most popular developer tools and workflows.
 
 Heroku makes the process of deploying, configuring, scaling, tuning, and managing apps as simple and straightforward as possible. 
 Developers can focus on what’s most important: building great apps that delight and engage customers.
