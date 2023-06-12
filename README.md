@@ -7,10 +7,17 @@ This guide and repository provide an example of how you can port Salesforce Func
 The contents of this repository are available for you to modify and use under the Apache License Version 2.0 license. 
 See the [LICENSE](https://github.com/heroku/function-migration/blob/main/LICENSE.txt) file for more info.
 
+Salesforce is under no obligation to:
+- update or maintain this repository;
+- accept and/or merge Pull Requests; or
+- respond to open issues, questions, or requests posted in this repository.
+
+Salesforce does not warrant that the software code in this repository will reproduce the behavior of any Salesforce Elastic Services deployment.
+
 ## Heroku
 
 Heroku is a Platform as a Service based on a managed container system. Heroku has integrated data services and a powerful ecosystem for deploying and running modern apps. 
-The Heroku developer experience is an app-centric approach for software delivery that’s integrated with today’s most popular developer tools and workflows.
+The Heroku developer experience is an app-cenatric approach for software delivery that’s integrated with today’s most popular developer tools and workflows.
 
 Heroku makes the process of deploying, configuring, scaling, tuning, and managing apps as simple and straightforward as possible. 
 Developers can focus on what’s most important: building great apps that delight and engage customers.
@@ -21,11 +28,11 @@ Heroku is required for these example deployments. To gain familiarity with Herok
 
 The differences between Heroku apps and Salesforce Functions include, but aren’t limited to:
 
-- **Trust Boundary**: Salesforce manages the security for Salesforce Functions ensuring only the authenticated Salesforce org can access. Customers configure and manage the trust boundary for their Heroku apps. Functions aren’t exposed to the internet, while Heroku apps are. You can control access to apps at the network level by using [Heroku Private Spaces](https://devcenter.heroku.com/articles/private-spaces).
+- **Trust Boundary**: Salesforce manages the security for Salesforce Functions ensuring only the authenticated Salesforce org can invoke deployed functions. Customers configure and manage the trust boundary for their Heroku apps. Functions aren’t exposed to the internet, while Heroku apps are. You can control access to Heroku apps at the network level by using [Heroku Private Spaces](https://devcenter.heroku.com/articles/private-spaces).
 - **Scale**: Salesforce Functions has elastic scale. Heroku apps’ scaling is static though customers can manually configure it. [Autoscaling](https://devcenter.heroku.com/articles/scaling#autoscaling) is available only for [Performance-tier dynos](https://devcenter.heroku.com/articles/dyno-types) and dynos running in [Private Spaces](https://devcenter.heroku.com/articles/private-spaces). Additional scaling options are available via [Heroku Add-ons](https://elements.heroku.com/addons).
 - **Invocation Time**: Salesforce Functions has a fixed invocation time limit whereas Heroku apps are [long-running](https://devcenter.heroku.com/articles/dynos#automatic-dyno-restarts). 
-- **API Limits**: Salesforce Functions has its own API bucket and limits. Standard license-based Salesforce limits, such as API limits, apply to Heroku apps. Syncing data to and from a Salesforce org and Heroku Postgres when using [Heroku Connect](https://elements.heroku.com/addons/herokuconnect) doesn’t count toward Salesforce API limits.
-- **Identity**: Salesforce Functions are invoked as the Cloud Integration or Platform Integration User. Heroku app functions are invoked as the invoking Salesforce user.
+- **API Limits**: Salesforce Functions has its own API allocation and limits. Standard license-based Salesforce limits, such as API requests, apply to Heroku apps. Syncing data to and from a Salesforce org and Heroku Postgres when using [Heroku Connect](https://elements.heroku.com/addons/herokuconnect) doesn’t count toward Salesforce API limits.
+- **Identity**: Salesforce Functions are invoked as the Cloud Integration or Platform Integration User. Heroku app deployed functions can enforce more fine grained access control since they are invoked as a specific Salesforce user.
 - **Management**: You can manage Heroku apps via [Heroku Dashboards](https://devcenter.heroku.com/articles/heroku-dashboard) that provide UI support for tasks like configuring apps, viewing app metrics, and viewing usage, invoice, and billing information.
 - **Developer Experience**: You can configure and deploy Heroku apps via the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli). Heroku apps also have broader [language support](https://www.heroku.com/languages) and have [Heroku Pipelines](https://devcenter.heroku.com/articles/pipelines) for CI/CD.
 - **Add-ons**: Heroku apps have a rich inventory of [Heroku Add-ons](https://elements.heroku.com/addons) that provide tools and services for developing, extending, and operating your app.
@@ -46,6 +53,8 @@ The Reference Functions Framework includes:
 - A new **Custom Metadata Type**, `FunctionReference__mdt`, that represents deployed, invocable functions.
 - A new **Custom Object**, `AsyncFunctionInvocationRequest__c`, that tracks asynchronous requests and handles asynchronous responses.
 - **Language-specific proxies**, `Java` and `Node`, that are deployed with functions to validate, enrich, and manage function requests.
+
+Together, these elements allow you to deploy your existing Salesforce Functions as Heroku apps with minimal disruption to your org.
 
 ### Architecture
 
@@ -126,7 +135,7 @@ The `get()` method queries a `FunctionReference__mdt` custom metadata record ref
 The validation ensures that the invoking user is assigned to the given session-based permission set.
 
 The Reference Functions Framework doesn’t require a project name as a function qualifier. 
-If a Salesforce org’s source and metadata span multiple repositories, you can use a project name to ensure that `FunctionReference__mdt` records are unique.
+If a Salesforce org’s source and metadata span multiple repositories, you may need to include the project name (or some other unique qualifier) to ensure that `FunctionReference__mdt` records are unique.
 
 The `invoke()` method invokes the function and uses metadata provided by the associated `FunctionReference__mdt` record. 
 As with Salesforce Functions, if a `FunctionCallback` implementation is given, the function is invoked asynchronously. The `FunctionCallback `callback is involved on function response.
