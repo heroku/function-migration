@@ -60,7 +60,7 @@ Together, these elements allow you to deploy your existing Salesforce Functions 
 
 The following diagram shows how Reference Functions Framework components interact with functions deployed as Heroku apps.
 
-- **Orange** boxes indicate Reference Functions Framework components provided in this repository.
+- **Yellow** boxes indicate Reference Functions Framework components provided in this repository.
 - **Green** boxes indicate customer setup or developed components that implement Reference Functions Framework APIs and function code.
 - **Blue** represents Salesforce Platform APIs and features.
 - **Purple** represents the Heroku platform.
@@ -109,7 +109,10 @@ The Reference Functions Framework provides Apex classes as APIs to invoke functi
 See the [class](https://github.com/heroku/function-migration/tree/main/force-app/main/default/classes/functions) and [trigger](https://github.com/heroku/function-migration/tree/main/force-app/main/default/triggers/functions) file comments for more details.
 
 ```bash
-force-app/main/default/classes/functions/
+# Apex classes
+force-app/main/default/classes/functions
+├── AsyncFunctionInvocationQueueable.cls
+├── AsyncResponseHandlerTriggerHandler.cls
 ├── FunctionCallback.cls
 ├── FunctionCallbackQueueable.cls
 ├── Function.cls
@@ -120,9 +123,13 @@ force-app/main/default/classes/functions/
 ├── FunctionInvocationImpl.cls
 ├── FunctionInvocationRequest.cls
 ├── FunctionInvocationStatus.cls
+├── FunctionInvoker.cls
+├── FunctionReferenceMetadataProviderImpl.cls
+├── FunctionReferenceProvider.cls
 ├── FunctionsAuthProvider.cls
-└── FunctionsMetadataAuthProviderImpl.cls
+├── FunctionsMetadataAuthProviderImpl.cls
 
+# Apex triggers
 force-app/main/default/triggers/functions/
 └── AsyncResponseHandlerTrigger.trigger
 ```
