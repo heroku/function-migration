@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+JAVA_TOOL_OPTIONS="${PROXY_JAVA_TOOL_OPTIONS:-$JAVA_TOOL_OPTIONS}"
+cat << EOF
+---
+addons: []
+default_process_types:
+  web: java $JAVA_TOOL_OPTIONS -jar $HOME/proxy/target/proxy-0.0.1.jar com.salesforce.functions.proxy.ProxyApplication
+EOF

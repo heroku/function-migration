@@ -1,0 +1,12 @@
+#!/bin/sh
+cd $1
+
+# Ensure that sf-fx-runtime-nodejs is installed
+SF_FX_RUNTIME=$1/node_modules/@heroku/sf-fx-runtime-nodejs
+if [ ! -d $SF_FX_RUNTIME ]; then
+    echo "Error: $SF_FX_RUNTIME not found.  Ensure that sf-fx-runtime-nodejs is a package.json production dependency."
+    exit 1
+fi
+
+cd $1/proxy
+npm install

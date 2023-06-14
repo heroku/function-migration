@@ -1,0 +1,9 @@
+{
+  "id": "00Dxx0000006IYJEA2-4Y4W3Lw_LkoskcHdEaZze-a00xx000000bxi1AAA-MyProject.MyFunction-2020-09-03T20:56:27.608444Z",
+  "functionName": "MyProject.MyFunction",
+  "resource": "https://typescriptfunction.heroku.com",
+  "source": "urn:event:from:salesforce/xx/00Dxx0000006IYJEA2/apex",
+  "type": "com.salesforce.function.invoke.async",
+  "functionInvocationId": "a00xx000000bz3tAAA",
+  "permissionSets": [ "Functions" ]
+}
