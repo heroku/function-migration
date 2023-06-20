@@ -56,6 +56,35 @@ public class FunctionInvokeTests {
     }
 
     @isTest
+    static void testInvoke_sync_nullPayload() {
+        FunctionReferenceProvider mockFunctionReferenceProvider =
+            FunctionsTestDataFactory.createFunctionReferenceRecord(FUNCTION_REF, withNamespace(PERM_SET_NAME));
+
+        // Pass on invoke() success
+        String payload = null;
+        String responseBody = '{}';
+        Test.setMock(HttpCalloutMock.class, FunctionInvocationCalloutMocks.respondSuccess(responseBody));
+        Function testInvokeFunction = Function.get('', FUNCTION_REF, mockFunctionReferenceProvider);
+
+        Test.startTest();
+
+        FunctionInvocation invocation = testInvokeFunction.invoke(payload, new FunctionsTestAuthProviderMocks.FakeAuthProvider());
+
+        Test.stopTest();
+
+        Assert.areEqual(responseBody, invocation.getResponse(), invocation.getResponse());
+        Assert.isNotNull(invocation.getError());
+        Assert.isTrue(String.isEmpty(invocation.getError().getMessage()), invocation.getError().getMessage());
+        Assert.areEqual(FunctionInvocationStatus.SUCCESS.name(), invocation.getStatus().name());
+        Assert.isNotNull(invocation.getInvocationId());
+        Assert.isNull(invocation.getAsyncFunctionInvocationRequestId());
+        Assert.isFalse(invocation.isFunctionError());
+        Assert.areEqual(763, invocation.getExecTimeMs());
+        Assert.isNotNull(invocation.getStacktrace());
+        Assert.areEqual(200, invocation.getStatusCode());
+    }
+
+    @isTest
     static void testInvoke_sync_functionError() {
         FunctionReferenceProvider mockFunctionReferenceProvider = 
             FunctionsTestDataFactory.createFunctionReferenceRecord(FUNCTION_REF, withNamespace(PERM_SET_NAME));

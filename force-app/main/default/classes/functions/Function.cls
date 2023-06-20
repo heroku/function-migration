@@ -72,6 +72,8 @@ public with sharing class Function {
 
     /**
      * Synchronously invoke function.
+     *
+     * Synchronous function invocations are not allowed when there is an uncommitted transaction pending (CalloutException).
      * 
      * @param payloadJson - function payload (JSON)
      */
@@ -81,6 +83,8 @@ public with sharing class Function {
 
     /**
      * Synchronously invoke function generating a token with given FunctionsAuthProvider.
+     *
+     * Synchronous function invocations are not allowed when there is an uncommitted transaction pending (CalloutException).
      * 
      * @param payloadJson - function payload (JSON)
      * @param authProvider - FunctionsAuthProvider implementation provides accessToken for function request authentication
@@ -90,6 +94,9 @@ public with sharing class Function {
         if (null == authenticationToken) {
             throw new InvalidFunctionInvocationException('Authentication token not provided');
         }
+
+        // Ensure non-null payload
+        payloadJson = sanitizePayload(payloadJson);
         
         String requestTime = Datetime.now().format('yyyy-MM-dd\'T\'HH:mm:ss.SSSZ');
         String requestId = generateRequestId(requestTime);
@@ -163,6 +170,9 @@ public with sharing class Function {
         if (null == authenticationToken) {
             throw new InvalidFunctionInvocationException('Authentication token not provided');
         }
+
+        // Ensure non-null payload
+        payloadJson = sanitizePayload(payloadJson);
 
         // Ensure that the callback class is NOT deleted prior to invocation
         AsyncFunctionInvocationRequest__c afir = new AsyncFunctionInvocationRequest__c(
@@ -298,6 +308,14 @@ public with sharing class Function {
                     '\' PermissionSet or PermissionSetGroup is not session-based.');
             }
         }
+    }
+
+    private String sanitizePayload(String payload) {
+        if (String.isEmpty(payload)) {
+            payload = '{}';
+        }
+
+        return payload;
     }
 
     private String generateRequestId(String requestTime) {
