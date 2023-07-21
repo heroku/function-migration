@@ -4,6 +4,35 @@
         <enabled>true</enabled>
         <name>FunctionReference__mdt</name>
     </customMetadataTypeAccesses>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AsyncFunctionInvocationRequest__c.ExtraInfo__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AsyncFunctionInvocationRequest__c.Response__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AsyncFunctionInvocationRequest__c.StatusCode__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>AsyncFunctionInvocationRequest__c.Status__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Functions Authentication</label>
+    <objectPermissions>
+        <allowCreate>false</allowCreate>
+        <allowDelete>false</allowDelete>
+        <allowEdit>false</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>false</modifyAllRecords>
+        <object>AsyncFunctionInvocationRequest__c</object>
+        <viewAllRecords>false</viewAllRecords>
+    </objectPermissions>
 </PermissionSet>

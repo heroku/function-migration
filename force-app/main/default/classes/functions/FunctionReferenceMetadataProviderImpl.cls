@@ -1,5 +1,5 @@
 /**
- * Default FunctionReference_mdt provider implementation that query's for a specific 
+ * Default FunctionReference_mdt provider implementation that queries for a specific
  * FunctionReference_mdt Custom Metadata record.
  */
 public with sharing class FunctionReferenceMetadataProviderImpl implements FunctionReferenceProvider {

@@ -302,6 +302,8 @@ public class FunctionInvokeTests {
         }
     }
 
+    // Test requires that the invoking user is assigned access to AsyncFunctionInvocationRequest__c (likely via
+    // FunctionsAuthentication Permission Set) or else: "Insufficient permissions: secure query included inaccessible field"
     @isTest
     static void testInvoke_async_unhandledExceptionOnInvoke() {
         AsyncFunctionInvocationRequest__c afir = new AsyncFunctionInvocationRequest__c(

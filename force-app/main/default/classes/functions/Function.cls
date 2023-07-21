@@ -249,7 +249,7 @@ public with sharing class Function {
             }
         }
 
-        String namespaceForSoql = isNamespaceNotBlank ? namespace : 'null';
+        String namespaceForSoql = isNamespaceNotBlank ? namespace : '';
         String functionReferenceSoql = 'SELECT ' + String.join(functionReferenceFields, ', ' ) + ' FROM ' + 
             functionReferenceCustomMetadataName + ' WHERE DeveloperName = \'' + projectFunctionRefForQuery + 
             '\' AND NamespacePrefix = \'' + namespaceForSoql + '\'';
