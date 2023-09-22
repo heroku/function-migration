@@ -4,6 +4,7 @@
     <externalId>false</externalId>
     <label>RequestId</label>
     <length>200</length>
+    <required>false</required>
     <trackTrending>false</trackTrending>
     <type>Text</type>
     <unique>false</unique>

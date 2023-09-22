@@ -74,6 +74,10 @@ public class AsyncFunctionInvocationQueueable implements Queueable, Database.All
 
     /**
      * Finalizer implementation captures failed function invocation jobs on unexpected execptions, eg limit errors.
+     *
+     * Requires that the invoking user is assigned access to AsyncFunctionInvocationRequest__c (likely via
+     * FunctionsAuthentication Permission Set) or else:
+     *   "Insufficient permissions: secure query included inaccessible field"
      * 
      * https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_transaction_finalizers.htm
      */

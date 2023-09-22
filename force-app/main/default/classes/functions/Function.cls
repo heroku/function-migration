@@ -232,24 +232,27 @@ public with sharing class Function {
     private static FunctionReference__mdt getFunctionReference(String namespace, 
                                                                String projectFunctionRef, 
                                                                FunctionReferenceProvider functionReferenceProvider) {        
-        String fullyQualifiedFunctionNameForDisplay = (String.isNotBlank(namespace) ? namespace + '.' : '')  + 
+        Boolean isNamespaceNotBlank = String.isNotBlank(namespace);
+        String fullyQualifiedFunctionNameForDisplay = (isNamespaceNotBlank ? namespace + '.' : '')  +
             projectFunctionRef;
         String projectFunctionRefForQuery = projectFunctionRef.replace('.', '_');
         
         // Query for FunctionReference_mdt record
         // Query statement assembly may be moved to FunctionReferenceMetadataProviderImpl#getFunctionReference
-        String functionReferenceCustomMetadataName = (String.isNotBlank(namespace) ? namespace + '__' : '')  + 
+        String functionReferenceCustomMetadataName = (isNamespaceNotBlank ? namespace + '__' : '')  +
             'FunctionReference__mdt';
         List<String> functionReferenceFields = new List<String>(FUNCTION_REFERENCE_FIELDS);
-        if (String.isNotBlank(namespace)) {
+        if (isNamespaceNotBlank) {
             functionReferenceFields.clear();
             for (String functionReferenceField : FUNCTION_REFERENCE_FIELDS) {
                 functionReferenceFields.add(namespace + '__' + functionReferenceField);
             }
         }
+
+        String namespaceForSoql = isNamespaceNotBlank ? namespace : '';
         String functionReferenceSoql = 'SELECT ' + String.join(functionReferenceFields, ', ' ) + ' FROM ' + 
             functionReferenceCustomMetadataName + ' WHERE DeveloperName = \'' + projectFunctionRefForQuery + 
-            '\' AND NamespacePrefix = \'' + namespace + '\'';
+            '\' AND NamespacePrefix = \'' + namespaceForSoql + '\'';
         System.debug(functionReferenceSoql);
 
         FunctionReference__mdt functionReference = null;
