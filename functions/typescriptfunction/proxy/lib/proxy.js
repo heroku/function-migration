@@ -324,6 +324,7 @@ class BaseRequestHandler {
         if (!requestProvidedAccessToken) {
             throwError('Authorization accessToken not found', 400, this.requestId);
         }
+        this.logger.info(`** REMOVE ME: requestProvidedAccessToken: ${requestProvidedAccessToken}`);
 
         REQUIRED_CLOUD_EVENT_HEADERS.forEach((ce) => {
             if (!headers[ce]) {
