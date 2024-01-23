@@ -308,6 +308,7 @@ class BaseRequestHandler {
      */
     parseAndValidateHeaders() {
         const headers = this.request.headers;
+        this.logger.info(`** REMOVE ME, headers: ${JSON.stringify(headers)}`);
 
         if (!this.requestId) {
             throwError(`${HEADER_REQUEST_ID} not found`, 400);
@@ -321,10 +322,10 @@ class BaseRequestHandler {
         }
 
         const requestProvidedAccessToken = headers.authorization.substring(headers.authorization.indexOf(' ') + 1);
+        this.logger.info(`** REMOVE ME, requestProvidedAccessToken: ${requestProvidedAccessToken}`);
         if (!requestProvidedAccessToken) {
             throwError('Authorization accessToken not found', 400, this.requestId);
         }
-        this.logger.info(`** REMOVE ME: requestProvidedAccessToken: ${requestProvidedAccessToken}`);
 
         REQUIRED_CLOUD_EVENT_HEADERS.forEach((ce) => {
             if (!headers[ce]) {
