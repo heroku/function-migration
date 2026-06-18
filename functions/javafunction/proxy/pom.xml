@@ -25,7 +25,7 @@
 		<!-- util -->
 		<commons-codec.version>1.10</commons-codec.version>
 		<jackson.version>2.14.2</jackson.version>
-		<guava.version>31.1-jre</guava.version>
+		<guava.version>32.0.0-jre</guava.version>
 	</properties>
 
 	<licenses>
